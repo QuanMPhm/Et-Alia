@@ -1,26 +1,89 @@
-from flask import Flask, request, jsonify, send_from_directory
-from flask_cors import CORS
 import os
 import subprocess
-import datetime
+import time
+import signal
+import json
+from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS
+from web3 import Web3
 
+# Flask setup
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})  # Allow ALL origins
+CORS(app, resources={r"/*": {"origins": "*"}})
 
-# --- Configuration ---
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # points to webserver/
-FRONTEND_DIR = os.path.abspath(os.path.join(BASE_DIR, '..', 'frontendkelvin'))  # up one level
+# Paths
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+FRONTEND_DIR = os.path.abspath(os.path.join(BASE_DIR, '..', 'frontendkelvin'))
 REPO_DIR = os.path.join(BASE_DIR, "repos")
 REPO_NAME = "markdown_repo"
 FULL_REPO_PATH = os.path.join(REPO_DIR, REPO_NAME)
 MARKDOWN_FILENAME = "file.md"
 
-# Make sure base repos folder exists
-os.makedirs(REPO_DIR, exist_ok=True)
+# Globals
+hh_node = None
+w3 = None
+commit_storage = None
 
-@app.before_request
-def log_request_info():
-    print(f"📥 Received {request.method} request for {request.path}")
+# --- Hardhat functions ---
+
+def start_hardhat_node():
+    print("🚀 Starting Hardhat node...")
+    global hh_node
+    hh_node = subprocess.Popen(
+    ["npx", "hardhat", "node"],
+    cwd="../hardhat-blockchain",
+    stdout=subprocess.DEVNULL,
+    stderr=subprocess.DEVNULL
+)
+
+    time.sleep(5)  # Give Hardhat time to fully start
+
+def deploy_contract():
+    print("🚀 Deploying smart contract...")
+    result = subprocess.run(
+        ["npx", "hardhat", "run", "scripts/deploy.js", "--network", "localhost"],
+        cwd="../hardhat-blockchain",
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    if result.returncode != 0:
+        print("❌ Deployment error:\n", result.stderr)
+        raise Exception("Contract deployment failed.")
+
+    output = result.stdout
+    print(output)
+
+    for line in output.splitlines():
+        if "CommitStorage deployed to:" in line:
+            return line.split(":")[1].strip()
+
+    raise Exception("Contract address not found.")
+
+def connect_web3(contract_address):
+    global w3, commit_storage
+    w3 = Web3(Web3.HTTPProvider("http://127.0.0.1:8545"))
+    assert w3.is_connected(), "Web3 not connected!"
+
+    abi_path = os.path.join(BASE_DIR, "blockchain", "contract_abi.json")
+    with open(abi_path) as f:
+        abi = json.load(f)
+
+    commit_storage = w3.eth.contract(address=contract_address, abi=abi)
+    w3.eth.default_account = w3.eth.accounts[0]
+
+def kill_node():
+    if hh_node:
+        print("🛑 Stopping Hardhat node...")
+        hh_node.terminate()
+        try:
+            hh_node.wait(timeout=5)
+            print("✅ Hardhat node stopped.")
+        except subprocess.TimeoutExpired:
+            hh_node.kill()
+            print("⚠️ Hardhat node force killed.")
+
+# --- Git and Blockchain functions ---
 
 def run_git_command(args, cwd=FULL_REPO_PATH):
     print(f"⚡ Running git command: git {' '.join(args)}")
@@ -32,147 +95,118 @@ def run_git_command(args, cwd=FULL_REPO_PATH):
         text=True,
     )
     if result.returncode != 0:
-        print(f"❌ Git command failed:\n{result.stderr}")
-        raise Exception(f"Git command failed: {result.stderr}")
-    print(f"✅ Git command output:\n{result.stdout.strip()}")
+        print(f"❌ Git error:\n{result.stderr}")
+        raise Exception(f"Git failed: {result.stderr}")
     return result.stdout.strip()
 
 def initialize_repo():
     if not os.path.exists(FULL_REPO_PATH):
-        print(f"📂 Creating repository folder at {FULL_REPO_PATH}")
+        print(f"📂 Creating repository at {FULL_REPO_PATH}")
         os.makedirs(FULL_REPO_PATH)
-    else:
-        print(f"📂 Repository folder already exists at {FULL_REPO_PATH}")
-
     if not os.path.exists(os.path.join(FULL_REPO_PATH, ".git")):
-        print(f"🛠️ Initializing new Git repository...")
+        print(f"🛠️ Initializing Git repo...")
         run_git_command(["init"])
         run_git_command(["config", "user.email", "server@example.com"])
         run_git_command(["config", "user.name", "Server Bot"])
-    else:
-        print(f"✅ Git repository already initialized.")
+
+# --- Flask Endpoints ---
 
 @app.route('/')
 def root():
-    print("🏠 Serving frontend index.html")
     return send_from_directory(FRONTEND_DIR, 'index.html')
 
 @app.route('/<path:path>')
-def serve_frontend(path):
-    print(f"📄 Serving frontend file: {path}")
+def serve_static(path):
     return send_from_directory(FRONTEND_DIR, path)
 
 @app.route('/upload', methods=['POST'])
 def upload_markdown():
-    print("🚀 Upload endpoint called.")
+    print("🚀 Upload called.")
 
     file = request.files.get('file')
     if file is None:
-        print("❌ No file uploaded!")
         return jsonify({"error": "No file uploaded"}), 400
 
     initialize_repo()
 
     filepath = os.path.join(FULL_REPO_PATH, MARKDOWN_FILENAME)
     temp_path = os.path.join(FULL_REPO_PATH, "temp_upload.md")
-
-    print(f"💾 Saving uploaded file temporarily to {temp_path}")
     file.save(temp_path)
 
-    # Compare old file with new file
     is_different = True
     if os.path.exists(filepath):
         with open(filepath, 'r', encoding='utf-8') as f1, open(temp_path, 'r', encoding='utf-8') as f2:
-            old_content = f1.read()
-            new_content = f2.read()
-            if old_content == new_content:
+            if f1.read() == f2.read():
                 is_different = False
-                print("⚡ Uploaded file is identical to existing file. No commit needed.")
 
     if is_different:
-        print("✅ Uploaded file is different. Updating and committing...")
         os.replace(temp_path, filepath)
 
         try:
-            print(f"➕ Adding file to Git...")
             run_git_command(["add", MARKDOWN_FILENAME])
-
-            commit_message = request.form.get('message', f"Commit at {datetime.datetime.now().isoformat()}")
-            print(f"📝 Committing file with message: {commit_message}")
+            commit_message = request.form.get('message', f"Commit at {time.time()}")
             run_git_command(["commit", "-m", commit_message])
 
+            # Fetch latest commit
+            log_output = run_git_command(["log", "--pretty=format:%H%n%an%n%ad%n%s", "-n", "1"])
+            commit_hash, author_name, date_readable, commit_message_saved = log_output.split("\n", 3)
+
+            # Save commit to blockchain
+            tx_hash = commit_storage.functions.saveCommit(
+                commit_hash,
+                author_name,
+                commit_message_saved,
+                date_readable
+            ).transact()
+
+            w3.eth.wait_for_transaction_receipt(tx_hash)
+            print("✅ Commit saved to blockchain.")
+
         except Exception as e:
-            print(f"❗ Git operation error: {str(e)}")
             return jsonify({"error": str(e)}), 500
 
-        print("✅ File uploaded and committed successfully!")
-        return jsonify({"message": "File uploaded and committed successfully."}), 200
+        return jsonify({"message": "File committed and saved to blockchain."}), 200
 
     else:
         os.remove(temp_path)
-        print("✅ Upload ignored: no file changes.")
         return jsonify({"message": "No changes detected. No commit made."}), 200
 
-@app.route('/diff', methods=['GET'])
-def get_diff():
-    print("🔍 Diff endpoint called.")
+@app.route('/current_markdown', methods=['GET'])
+def get_current_markdown():
+    """Returns the current markdown contents to display on frontend"""
+    filepath = os.path.join(FULL_REPO_PATH, MARKDOWN_FILENAME)
+    if os.path.exists(filepath):
+        with open(filepath, 'r', encoding='utf-8') as f:
+            content = f.read()
+        return jsonify({"content": content})
+    else:
+        return jsonify({"content": "No file uploaded yet."})
 
-    initialize_repo()
-
+@app.route('/commits', methods=['GET'])
+def get_commits():
     try:
-        log_output = run_git_command(["log", "--pretty=format:%H", "-n", "2"])
-        commits = log_output.splitlines()
-
-        if len(commits) < 2:
-            print("⚠️ Not enough commits to generate diff.")
-            return jsonify({"error": "Not enough commits to generate diff."}), 400
-
-        new_commit = commits[0]
-        old_commit = commits[1]
-
-        diff_stat = run_git_command(["diff", "--shortstat", f"{old_commit}", f"{new_commit}", MARKDOWN_FILENAME])
-        diff_patch = run_git_command(["diff", f"{old_commit}", f"{new_commit}", MARKDOWN_FILENAME])
-
-        commit_info = run_git_command([
-            "show", "--quiet",
-            "--pretty=format:%H%n%P%n%an%n%ae%n%ad%n%ai%n%s",
-            new_commit
-        ])
-        (
-            commit_hash,
-            parent_commit,
-            author_name,
-            author_email,
-            date_readable,
-            date_iso,
-            message
-        ) = commit_info.split("\n", 6)
-
-        branch = run_git_command(["rev-parse", "--abbrev-ref", "HEAD"])
-
+        total = commit_storage.functions.getCommitsCount().call()
+        commits = []
+        for i in range(total):
+            commit = commit_storage.functions.getCommit(i).call()
+            commits.append({
+                "commit_hash": commit[0],
+                "author_name": commit[1],
+                "commit_message": commit[2],
+                "date_iso": commit[3],
+            })
+        return jsonify(commits), 200
     except Exception as e:
-        print(f"❗ Error during diff generation: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
-    print("✅ Diff and commit info generated successfully!")
-    return jsonify({
-        "branch": branch,
-        "commit_hash": commit_hash,
-        "parent_commit": parent_commit,
-        "author_name": author_name,
-        "author_email": author_email,
-        "date_readable": date_readable,
-        "date_iso": date_iso,
-        "commit_message": message,
-        "diff_summary": diff_stat,
-        "diff_patch": diff_patch
-    }), 200
-
-@app.route('/repos/markdown_repo/<path:filename>')
-def serve_markdown_file(filename):
-    print(f"📄 Serving markdown file: {filename}")
-    return send_from_directory(FULL_REPO_PATH, filename)
+# --- Start Everything ---
 
 if __name__ == '__main__':
-    print("🚀 Starting Flask server on http://localhost:5000")
-    app.run(debug=True)
+    try:
+        start_hardhat_node()
+        contract_address = deploy_contract()
+        connect_web3(contract_address)
+        print("🚀 Flask server ready at http://localhost:5000")
+        app.run(debug=True)
+    finally:
+        kill_node()
