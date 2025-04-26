@@ -1,3 +1,5 @@
-Flask>=2.3.0
-flask-cors>=3.0.10
-web3>=6.0.0
+Flask
+Flask-Cors
+Flask-SQLAlchemy
+web3
+python-dotenv
