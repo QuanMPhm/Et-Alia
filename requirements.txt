@@ -3,3 +3,4 @@ Flask-Cors
 Flask-SQLAlchemy
 web3
 python-dotenv
+Werkzeug
