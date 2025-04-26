@@ -1,102 +1,147 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Markdown Uploader</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f4f4;
-            margin: 0;
-            padding: 20px;
-            text-align: center;
-        }
-        #uploadForm {
-            margin-bottom: 30px;
-        }
-        #markdownDisplay {
-            width: 60%;
-            margin: 0 auto;
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
-            text-align: left;
-            white-space: pre-wrap;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Markdown Uploader</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+    #uploadForm {
+      margin-bottom: 30px;
+    }
+    #markdownDisplay {
+      width: 60%;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+      text-align: left;
+      white-space: pre-wrap;
+    }
+    #commitHistory {
+      width: 80%;
+      margin: 20px auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+      text-align: left;
+      white-space: pre-wrap;
+      overflow: visible; /* make it grow */
+    }
+  </style>
 </head>
 <body>
 
-    <h1>Upload a Markdown File</h1>
+  <h1>Upload a Markdown File</h1>
 
-    <form id="uploadForm">
-        <input type="file" id="fileInput" accept=".md">
-        <input type="text" id="commitMessage" placeholder="Commit message (optional)">
-        <button type="submit">Upload</button>
-    </form>
+  <form id="uploadForm">
+    <input type="file" id="fileInput" accept=".md">
+    <input type="text" id="commitMessage" placeholder="Commit message (optional)">
+    <button type="submit">Upload</button>
+  </form>
 
-    <h2>Current Markdown:</h2>
-    <div id="markdownDisplay">No file uploaded yet.</div>
+  <h2>Current Markdown:</h2>
+  <div id="markdownDisplay">No file uploaded yet.</div>
 
-    <script>
-        const uploadForm = document.getElementById('uploadForm');
-        const fileInput = document.getElementById('fileInput');
-        const commitMessage = document.getElementById('commitMessage');
-        const markdownDisplay = document.getElementById('markdownDisplay');
+  <h2>Commit History:</h2>
+  <div id="commitHistory">No commits yet.</div>
 
-        const BASE_URL = `${window.location.protocol}//${window.location.host}`;
-        console.log("Using BASE_URL:", BASE_URL);
+  <script>
+    const uploadForm = document.getElementById('uploadForm');
+    const fileInput = document.getElementById('fileInput');
+    const commitMessage = document.getElementById('commitMessage');
+    const markdownDisplay = document.getElementById('markdownDisplay');
+    const commitHistory = document.getElementById('commitHistory');
 
-        uploadForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
+    uploadForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const file = fileInput.files[0];
+      if (!file) {
+        alert("Please select a file.");
+        return;
+      }
 
-            const file = fileInput.files[0];
-            if (!file) {
-                alert("Please select a file.");
-                return;
-            }
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('message', commitMessage.value || `Commit at ${new Date().toISOString()}`);
 
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('message', commitMessage.value || `Commit at ${new Date().toISOString()}`);
-
-            try {
-                const response = await fetch(`${BASE_URL}/upload`, {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (response.ok) {
-                    alert("File uploaded and committed successfully!");
-                    loadCurrentMarkdown();
-                } else {
-                    const error = await response.json();
-                    alert("Upload failed: " + (error.error || "Unknown error"));
-                }
-            } catch (error) {
-                console.error(error);
-                alert("Upload failed.");
-            }
+      try {
+        const response = await fetch('/upload', {
+          method: 'POST',
+          body: formData
         });
 
-        async function loadCurrentMarkdown() {
-            try {
-                const response = await fetch(`${BASE_URL}/repos/markdown_repo/file.md`);
-                if (response.ok) {
-                    const text = await response.text();
-                    markdownDisplay.textContent = text;
-                } else {
-                    markdownDisplay.textContent = "Failed to load markdown.";
-                }
-            } catch (error) {
-                console.error(error);
-                markdownDisplay.textContent = "Failed to load markdown.";
-            }
+        if (response.ok) {
+          alert("File uploaded and committed successfully!");
+          loadMarkdown();
+          loadCommits();
+        } else {
+          const error = await response.json();
+          alert("Upload failed: " + (error.error || "Unknown error"));
         }
+      } catch (error) {
+        console.error(error);
+        alert("Upload failed.");
+      }
+    });
 
-        loadCurrentMarkdown();
-    </script>
+    async function loadMarkdown() {
+      try {
+        const response = await fetch('/current_markdown');
+        if (response.ok) {
+          const data = await response.json();
+          markdownDisplay.textContent = data.content || "No file uploaded yet.";
+        } else {
+          markdownDisplay.textContent = "Failed to load markdown.";
+        }
+      } catch (error) {
+        console.error(error);
+        markdownDisplay.textContent = "Failed to load markdown.";
+      }
+    }
+
+    async function loadCommits() {
+      try {
+        const response = await fetch('/commits');
+        if (response.ok) {
+          const commits = await response.json();
+          commitHistory.innerHTML = ""; // Clear previous
+          if (commits.length === 0) {
+            commitHistory.textContent = "No commits yet.";
+            return;
+          }
+          commits.forEach(commit => {
+            const commitDiv = document.createElement('div');
+            commitDiv.innerHTML = `
+              <p><strong>Hash:</strong> ${commit.commit_hash}</p>
+              <p><strong>Author:</strong> ${commit.author_name}</p>
+              <p><strong>Message:</strong> ${commit.commit_message}</p>
+              <p><strong>Date:</strong> ${commit.date_iso}</p>
+              <hr>
+            `;
+            commitHistory.appendChild(commitDiv);
+          });
+        } else {
+          commitHistory.textContent = "Failed to load commits.";
+        }
+      } catch (error) {
+        console.error(error);
+        commitHistory.textContent = "Failed to load commits.";
+      }
+    }
+
+    // Load on page start
+    loadMarkdown();
+    loadCommits();
+  </script>
 
 </body>
 </html>
