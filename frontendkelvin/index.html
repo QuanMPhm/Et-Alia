@@ -11,6 +11,24 @@
       padding: 20px;
       text-align: center;
     }
+    #topBar {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    #userInfo {
+      font-size: 16px;
+      margin-right: 10px;
+    }
+    #logoutButton {
+      padding: 5px 10px;
+      background: #d9534f;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
     #uploadForm {
       margin-bottom: 30px;
     }
@@ -25,25 +43,14 @@
       white-space: pre-wrap;
       overflow: visible;
     }
-    #userInfo {
-      margin-bottom: 20px;
-      font-size: 18px;
-    }
-    #logoutButton {
-      margin-top: 10px;
-      padding: 5px 10px;
-      background: #d9534f;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
   </style>
 </head>
 <body>
 
-  <div id="userInfo"></div>
-  <button id="logoutButton" style="display:none;">Logout</button>
+  <div id="topBar">
+    <div id="userInfo"></div>
+    <button id="logoutButton" style="display: none;">Logout</button>
+  </div>
 
   <h1>Upload a Markdown File</h1>
 
@@ -58,106 +65,110 @@
 
   <h2>Commit History:</h2>
   <div id="commitHistory">No commits yet.</div>
-
   <script>
-    // Check login
+    window.addEventListener('DOMContentLoaded', function() {
+        const user = JSON.parse(sessionStorage.getItem('user'));
+        const userInfo = document.getElementById('userInfo');
+        const logoutButton = document.getElementById('logoutButton');
+        const uploadForm = document.getElementById('uploadForm');
+        const fileInput = document.getElementById('fileInput');
+        const commitMessage = document.getElementById('commitMessage');
+        const markdownDisplay = document.getElementById('markdownDisplay');
+        const commitHistory = document.getElementById('commitHistory');
     
-    const user = JSON.parse(localStorage.getItem('user'));
-    const userInfo = document.getElementById('userInfo');
-    const logoutButton = document.getElementById('logoutButton');
-
+        if (user) {
+          userInfo.textContent = `${user.email} (${user.role})`;
+          logoutButton.style.display = 'inline-block';
+        }
     
-
-    const uploadForm = document.getElementById('uploadForm');
-    const fileInput = document.getElementById('fileInput');
-    const commitMessage = document.getElementById('commitMessage');
-    const markdownDisplay = document.getElementById('markdownDisplay');
-    const commitHistory = document.getElementById('commitHistory');
-
-
-
-    uploadForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const file = fileInput.files[0];
-      if (!file) {
-        alert("Please select a file.");
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('message', commitMessage.value || `Commit at ${new Date().toISOString()}`);
-
-      try {
-        const response = await fetch('/upload', {
-          method: 'POST',
-          body: formData
+        logoutButton.addEventListener('click', () => {
+          sessionStorage.removeItem('user');
+          window.location.href = 'login.html';
         });
-
-        if (response.ok) {
-          alert("File uploaded and committed successfully!");
-          loadMarkdown();
-          loadCommits();
-        } else {
-          const error = await response.json();
-          alert("Upload failed: " + (error.error || "Unknown error"));
-        }
-      } catch (error) {
-        console.error(error);
-        alert("Upload failed.");
-      }
-    });
-
-    async function loadMarkdown() {
-      try {
-        const response = await fetch('/current_markdown');
-        if (response.ok) {
-          const data = await response.json();
-          markdownDisplay.textContent = data.content || "No file uploaded yet.";
-        } else {
-          markdownDisplay.textContent = "Failed to load markdown.";
-        }
-      } catch (error) {
-        console.error(error);
-        markdownDisplay.textContent = "Failed to load markdown.";
-      }
-    }
-
-    async function loadCommits() {
-      try {
-        const response = await fetch('/commits');
-        if (response.ok) {
-          const commits = await response.json();
-          commitHistory.innerHTML = "";
-          if (commits.length === 0) {
-            commitHistory.textContent = "No commits yet.";
+    
+        uploadForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          
+          const file = fileInput.files[0];
+          if (!file) {
+            alert("Please select a file.");
             return;
           }
-          commits.forEach(commit => {
-            const commitDiv = document.createElement('div');
-            commitDiv.innerHTML = `
-              <p><strong>Hash:</strong> ${commit.commit_hash}</p>
-              <p><strong>Author:</strong> ${commit.author_name}</p>
-              <p><strong>Message:</strong> ${commit.commit_message}</p>
-              <p><strong>Date:</strong> ${commit.date_iso}</p>
-              <hr>
-            `;
-            commitHistory.appendChild(commitDiv);
-          });
-        } else {
-          commitHistory.textContent = "Failed to load commits.";
+    
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('message', commitMessage.value || `Commit at ${new Date().toISOString()}`);
+    
+          try {
+            const response = await fetch('/upload', {
+              method: 'POST',
+              body: formData
+            });
+    
+            if (response.ok) {
+              alert("File uploaded and committed successfully!");
+              loadMarkdown();
+              loadCommits();
+            } else {
+              const error = await response.json();
+              alert("Upload failed: " + (error.error || "Unknown error"));
+            }
+          } catch (error) {
+            console.error(error);
+            alert("Upload failed.");
+          }
+        });
+    
+        async function loadMarkdown() {
+          try {
+            const response = await fetch('/current_markdown');
+            if (response.ok) {
+              const data = await response.json();
+              markdownDisplay.textContent = data.content || "No file uploaded yet.";
+            } else {
+              markdownDisplay.textContent = "Failed to load markdown.";
+            }
+          } catch (error) {
+            console.error(error);
+            markdownDisplay.textContent = "Failed to load markdown.";
+          }
         }
-      } catch (error) {
-        console.error(error);
-        commitHistory.textContent = "Failed to load commits.";
-      }
-    }
-
-    loadMarkdown();
-    loadCommits();
-  </script>
+    
+        async function loadCommits() {
+          try {
+            const response = await fetch('/commits');
+            if (response.ok) {
+              const commits = await response.json();
+              commitHistory.innerHTML = "";
+              if (commits.length === 0) {
+                commitHistory.textContent = "No commits yet.";
+                return;
+              }
+              commits.forEach(commit => {
+                const commitDiv = document.createElement('div');
+                commitDiv.innerHTML = `
+                  <p><strong>Hash:</strong> ${commit.commit_hash}</p>
+                  <p><strong>Author:</strong> ${commit.author_name}</p>
+                  <p><strong>Message:</strong> ${commit.commit_message}</p>
+                  <p><strong>Date:</strong> ${commit.date_iso}</p>
+                  <hr>
+                `;
+                commitHistory.appendChild(commitDiv);
+              });
+            } else {
+              commitHistory.textContent = "Failed to load commits.";
+            }
+          } catch (error) {
+            console.error(error);
+            commitHistory.textContent = "Failed to load commits.";
+          }
+        }
+    
+        loadMarkdown();
+        loadCommits();
+    });
+    </script>
+    
 
 </body>
 </html>
-
