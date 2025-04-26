@@ -7,8 +7,10 @@ import datetime
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})  # Allow ALL origins
 
-# Configuration
-REPO_DIR = "./repos"
+# --- Configuration ---
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # points to webserver/
+FRONTEND_DIR = os.path.abspath(os.path.join(BASE_DIR, '..', 'frontendkelvin'))  # up one level
+REPO_DIR = os.path.join(BASE_DIR, "repos")
 REPO_NAME = "markdown_repo"
 FULL_REPO_PATH = os.path.join(REPO_DIR, REPO_NAME)
 MARKDOWN_FILENAME = "file.md"
@@ -21,7 +23,6 @@ def log_request_info():
     print(f"📥 Received {request.method} request for {request.path}")
 
 def run_git_command(args, cwd=FULL_REPO_PATH):
-    """Run a git command and print the command and output"""
     print(f"⚡ Running git command: git {' '.join(args)}")
     result = subprocess.run(
         ["git"] + args,
@@ -31,13 +32,12 @@ def run_git_command(args, cwd=FULL_REPO_PATH):
         text=True,
     )
     if result.returncode != 0:
-        print(f"❌ Git command failed with error:\n{result.stderr}")
+        print(f"❌ Git command failed:\n{result.stderr}")
         raise Exception(f"Git command failed: {result.stderr}")
     print(f"✅ Git command output:\n{result.stdout.strip()}")
     return result.stdout.strip()
 
 def initialize_repo():
-    """Initialize git repo if not already done"""
     if not os.path.exists(FULL_REPO_PATH):
         print(f"📂 Creating repository folder at {FULL_REPO_PATH}")
         os.makedirs(FULL_REPO_PATH)
@@ -45,7 +45,7 @@ def initialize_repo():
         print(f"📂 Repository folder already exists at {FULL_REPO_PATH}")
 
     if not os.path.exists(os.path.join(FULL_REPO_PATH, ".git")):
-        print(f"🛠️  Initializing new Git repository...")
+        print(f"🛠️ Initializing new Git repository...")
         run_git_command(["init"])
         run_git_command(["config", "user.email", "server@example.com"])
         run_git_command(["config", "user.name", "Server Bot"])
@@ -55,12 +55,12 @@ def initialize_repo():
 @app.route('/')
 def root():
     print("🏠 Serving frontend index.html")
-    return send_from_directory('frontendkelvin', 'index.html')
+    return send_from_directory(FRONTEND_DIR, 'index.html')
 
 @app.route('/<path:path>')
 def serve_frontend(path):
     print(f"📄 Serving frontend file: {path}")
-    return send_from_directory('frontendkelvin', path)
+    return send_from_directory(FRONTEND_DIR, path)
 
 @app.route('/upload', methods=['POST'])
 def upload_markdown():
@@ -91,7 +91,7 @@ def upload_markdown():
 
     if is_different:
         print("✅ Uploaded file is different. Updating and committing...")
-        os.replace(temp_path, filepath)  # Move temp file to real location
+        os.replace(temp_path, filepath)
 
         try:
             print(f"➕ Adding file to Git...")
@@ -102,14 +102,13 @@ def upload_markdown():
             run_git_command(["commit", "-m", commit_message])
 
         except Exception as e:
-            print(f"❗ Error during Git operations: {str(e)}")
+            print(f"❗ Git operation error: {str(e)}")
             return jsonify({"error": str(e)}), 500
 
         print("✅ File uploaded and committed successfully!")
         return jsonify({"message": "File uploaded and committed successfully."}), 200
 
     else:
-        # No difference → delete temp file
         os.remove(temp_path)
         print("✅ Upload ignored: no file changes.")
         return jsonify({"message": "No changes detected. No commit made."}), 200
@@ -152,10 +151,10 @@ def get_diff():
         branch = run_git_command(["rev-parse", "--abbrev-ref", "HEAD"])
 
     except Exception as e:
-        print(f"❗ Error during generating diff: {str(e)}")
+        print(f"❗ Error during diff generation: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
-    print("✅ Diff and commit information generated successfully!")
+    print("✅ Diff and commit info generated successfully!")
     return jsonify({
         "branch": branch,
         "commit_hash": commit_hash,
