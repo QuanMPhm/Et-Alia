@@ -65,7 +65,7 @@
       const data = await response.json();
       if (response.ok) {
         // ✅ Save clean user info to localStorage
-        localStorage.setItem('user', JSON.stringify({ email, role: data.role }));
+        sessionStorage.setItem('user', JSON.stringify({ email, role: data.role }));
 
         alert(`Login successful! Role: ${data.role}`);
         window.location.href = 'index.html';  // Redirect to main page
