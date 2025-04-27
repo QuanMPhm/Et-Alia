@@ -7,7 +7,7 @@ export default function SubmitButton({ label }: { label: string }) {
       {(isSubmitting) => (
         <button
           disabled={isSubmitting}
-          className="text-white rounded-full px-6 py-2 bg-black">
+          className="rounded-full bg-black px-6 py-2 text-white">
           {label}
         </button>
       )}
