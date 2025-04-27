@@ -107,12 +107,15 @@ window.addEventListener('DOMContentLoaded', function() {
             <p><strong>Filename:</strong> ${commit.filename}</p>
             <p><strong>Message:</strong> ${commit.message}</p>
             <pre><strong>Content:</strong>\n${commit.content}</pre>
+            <div id="diff-${index}" style="margin-top:10px; color:gray;">Loading diff...</div>
             <div class="buttonGroup">
               <button class="approveButton" onclick="approveCommit(${index})">Approve</button>
               <button class="rejectButton" onclick="rejectCommit(${index})">Reject</button>
             </div>
           `;
           pendingCommitsDiv.appendChild(commitDiv);
+
+          fetchAndDisplayDiff(commit.content, index); // Fetch live diff
         });
       } else {
         pendingCommitsDiv.textContent = "Failed to load pending uploads.";
@@ -120,6 +123,44 @@ window.addEventListener('DOMContentLoaded', function() {
     } catch (error) {
       console.error(error);
       pendingCommitsDiv.textContent = "Failed to load pending uploads.";
+    }
+  }
+
+  async function fetchAndDisplayDiff(newContent, index) {
+    try {
+      const response = await fetch('/current_markdown');
+      if (response.ok) {
+        const currentData = await response.json();
+        const oldContent = currentData.content || "";
+
+        const oldLines = oldContent.split('\n');
+        const newLines = newContent.split('\n');
+
+        let diffSummary = "";
+
+        const maxLines = Math.max(oldLines.length, newLines.length);
+        for (let i = 0; i < maxLines; i++) {
+          if (oldLines[i] !== newLines[i]) {
+            if (oldLines[i] !== undefined) {
+              diffSummary += `🔴 Removed at line ${i+1}: ${oldLines[i]}\n`;
+            }
+            if (newLines[i] !== undefined) {
+              diffSummary += `🟢 Added at line ${i+1}: ${newLines[i]}\n`;
+            }
+          }
+        }
+
+        if (!diffSummary) {
+          diffSummary = "No meaningful content changes detected.";
+        }
+
+        document.getElementById(`diff-${index}`).textContent = diffSummary;
+      } else {
+        document.getElementById(`diff-${index}`).textContent = "Diff unavailable.";
+      }
+    } catch (error) {
+      console.error(error);
+      document.getElementById(`diff-${index}`).textContent = "Diff unavailable.";
     }
   }
 
@@ -156,8 +197,7 @@ window.addEventListener('DOMContentLoaded', function() {
         body: JSON.stringify({ index: index, reason: reason })
       });
       if (response.ok) {
-        // Notify the Author via sessionStorage event
-        localStorage.setItem('rejection_reason', reason);
+        sessionStorage.setItem('rejection_reason', reason);
         alert("❌ Commit rejected successfully!");
         loadPendingCommits();
       } else {
