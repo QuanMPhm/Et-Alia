@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AnyFieldApi, createFormHook } from "@tanstack/react-form";
 import { type } from "arktype";
 import TextField from "../components/TextField";
@@ -6,6 +6,7 @@ import NumberField from "../components/NumberField";
 import SubmitButton from "../components/SubmitButton";
 import { fieldContext, formContext } from "../hooks/form-context.tsx";
 import { Container } from "../components/Container.tsx";
+import { useQueryClient } from "@tanstack/react-query";
 
 // Allow us to bind components to the form to keep type safety but reduce production boilerplate
 // Define this once to have a generator of consistent form instances throughout your app
@@ -39,21 +40,70 @@ function FieldInfo({ field }: { field: AnyFieldApi }) {
 // avoid logging "was xxx" for password
 const Password = type("string >= 8").configure({ actual: () => "" });
 
-const LogInForm = () => {
+const SignUpForm = () => {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
   const form = useAppForm({
     defaultValues: {
       email: "",
       password: "",
+      role: "author",
     },
     validators: {
       onChange: type({
         email: "string.email",
         password: Password,
+        role: "'author' | 'editor'",
       }),
     },
-    onSubmit: ({ value }) => {
-      // Do something with form data
-      console.log(JSON.stringify(value, null, 2));
+    onSubmit: async ({ value }) => {
+      const response = await fetch("http://localhost:5000/signup", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(value),
+      }).then((response) => response.json());
+      await queryClient.invalidateQueries({ queryKey: ["checkSession"] });
+
+      if ("error" in response) {
+        throw new Error(response.error);
+      }
+      if ("message" in response && response.message === "Signup successful!") {
+        // auto log-in
+        const response = await fetch("http://localhost:5000/login", {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: value.email,
+            password: value.password,
+          }),
+        }).then((response) => response.json());
+        if ("error" in response) {
+          throw new Error(response.error);
+        }
+        if ("message" in response && response.message === "Login successful!") {
+          // how to redirect with tanstack router here?
+          // go to /editor
+          navigate({ to: "/editor", replace: true });
+
+          return;
+        }
+        if (!response.ok) {
+          throw new Error(`${response.status}: ${response.statusText}`);
+        }
+
+        return;
+      }
+      if (!response.ok) {
+        throw new Error(`${response.status}: ${response.statusText}`);
+      }
+      return;
     },
   });
 
@@ -109,6 +159,43 @@ const LogInForm = () => {
           );
         }}
       />
+      <form.Field
+        name="role"
+        children={(field) => {
+          return (
+            <div className="flex w-[300px] flex-col gap-2">
+              <label className="w-full">Account Type</label>
+              <div className="flex gap-4">
+                <div className="flex items-center gap-2">
+                  <label htmlFor={field.name + "author"}>Author</label>
+                  <input
+                    type="radio"
+                    name={field.name}
+                    id={field.name + "author"}
+                    value="author"
+                    checked={field.state.value === "author"}
+                    onChange={() => field.handleChange("author")}
+                    className="h-4 w-4 accent-emerald-500"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <label htmlFor={field.name + "editor"}>Editor</label>
+                  <input
+                    type="radio"
+                    name={field.name}
+                    id={field.name + "editor"}
+                    value="editor"
+                    checked={field.state.value === "editor"}
+                    onChange={() => field.handleChange("editor")}
+                    className="h-4 w-4 accent-emerald-500"
+                  />
+                </div>
+              </div>
+              <FieldInfo field={field} />
+            </div>
+          );
+        }}
+      />
       <form.AppForm>
         <form.SubmitButton label="Sign Up" />
       </form.AppForm>
@@ -129,7 +216,7 @@ export const Route = createFileRoute("/signup")({
 function RouteComponent() {
   return (
     <Container>
-      <LogInForm />
+      <SignUpForm />
     </Container>
   );
 }
