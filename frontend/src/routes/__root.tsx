@@ -4,7 +4,7 @@ import {
   Outlet,
   useNavigate,
 } from "@tanstack/react-router";
-import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+// import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 // @ts-expect-error: Cannot find module
 import LogoWithText from "../assets/EtAliaLogoWithText.svg?react";
 import { Container } from "../components/Container";
@@ -353,8 +353,6 @@ export const Route = createRootRoute({
       <PendingCommitsTable />
 
       <footer>Copyright 2025</footer>
-
-      <TanStackRouterDevtools />
     </QueryClientProvider>
   ),
 });
