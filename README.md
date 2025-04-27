@@ -1,13 +1,10 @@
-# Et Alia  
-A Decentralized GitHub Alternative, Powered by Polkadot and Hardhat
-
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 ![Made with Flask](https://img.shields.io/badge/Flask-Backend-blue)
 ![Blockchain](https://img.shields.io/badge/Blockchain-Polkadot%20Westend%20Asset%20Hub-29ABE2)
 
 ---
 
-## 🌐 Overview
+## Overview
 
 **Et Alia** is a decentralized, blockchain-powered version control system for markdown documents.  
 Built on **Polkadot's Westend Asset Hub** and leveraging **Hardhat** for local smart contract deployment,  
