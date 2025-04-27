@@ -355,7 +355,8 @@ def login():
     user = User.query.filter_by(email=email).first()
     if user and user.check_password(password):
         session.permanent = True
-        session["user_email"] = user.id
+        session["user_id"] = user.id
+        session["user_email"] = user.email
         session["user_role"] = user.role
 
         redirect_url = (
@@ -380,7 +381,7 @@ def get_users():
 
 @app.route("/check-session", methods=["GET"])
 def check_session():
-    if "user_email" in session:
+    if "user_id" in session:
         return jsonify(
             {
                 "is_authenticated": True,
