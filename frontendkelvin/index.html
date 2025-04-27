@@ -51,6 +51,8 @@
     <div id="userInfo"></div>
     <button id="logoutButton" style="display: none;">Logout</button>
   </div>
+  <h2>Registered Users:</h2>
+<div id="usersList">Loading users...</div>
 
   <h1>Upload a Markdown File</h1>
 
@@ -163,7 +165,38 @@
             commitHistory.textContent = "Failed to load commits.";
           }
         }
-    
+        async function loadUsers() {
+  try {
+    const response = await fetch('/users');
+    if (response.ok) {
+      const users = await response.json();
+      const usersList = document.getElementById('usersList');
+      usersList.innerHTML = ""; // Clear previous
+
+      if (users.length === 0) {
+        usersList.textContent = "No registered users yet.";
+        return;
+      }
+
+      users.forEach(user => {
+        const userDiv = document.createElement('div');
+        userDiv.innerHTML = `
+          <p><strong>Email:</strong> ${user.email} | <strong>Role:</strong> ${user.role}</p>
+        `;
+        usersList.appendChild(userDiv);
+      });
+    } else {
+      document.getElementById('usersList').textContent = "Failed to load users.";
+    }
+  } catch (error) {
+    console.error(error);
+    document.getElementById('usersList').textContent = "Failed to load users.";
+  }
+}
+
+// Call it when page loads
+loadUsers();
+
         loadMarkdown();
         loadCommits();
     });

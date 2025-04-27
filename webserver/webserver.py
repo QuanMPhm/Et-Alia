@@ -248,6 +248,16 @@ def login():
 
 # --- Start Everything ---
 
+@app.route('/users', methods=['GET'])
+def get_users():
+    users = User.query.all()
+    users_data = [
+        {"email": user.email, "role": user.role}
+        for user in users
+    ]
+    return jsonify(users_data)
+
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()  # Make sure DB and tables are created
