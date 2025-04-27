@@ -1,13 +1,57 @@
 @import "tailwindcss";
 
+/* be-vietnam-pro-regular - latin */
+@font-face {
+  font-display: swap; /* Check https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face/font-display for other options. */
+  font-family: "Be Vietnam Pro";
+  font-style: normal;
+  font-weight: 400;
+  src: url("/fonts/be-vietnam-pro-v11-latin-regular.woff2") format("woff2"); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
+}
+
+/* be-vietnam-pro-700 - latin */
+@font-face {
+  font-display: swap; /* Check https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face/font-display for other options. */
+  font-family: "Be Vietnam Pro";
+  font-style: normal;
+  font-weight: 700;
+  src: url("/fonts/be-vietnam-pro-v11-latin-700.woff2") format("woff2"); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
+}
+
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --main-font:
+    "Be Vietnam Pro", "sans-serif", system-ui, Avenir, Helvetica, Arial,
+    sans-serif;
+}
+
+@theme {
+  --font-display: var(--main-font);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+  inset: 0;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+}
+main {
+  flex-grow: 1;
+}
+
+:root {
+  font-family: var(--main-font);
   line-height: 1.5;
   font-weight: 400;
 
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  color: black;
+  background-color: #ffffff;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -17,12 +61,12 @@
 
 a {
   font-weight: 500;
-  color: #646cff;
+  /* color: #646cff; */
   text-decoration: inherit;
 }
-a:hover {
-  color: #535bf2;
-}
+/* a:hover { */
+/*   color: #535bf2; */
+/* } */
 
 body {
   margin: 0;
