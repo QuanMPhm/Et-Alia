@@ -1,12 +1,5 @@
-Hi gang
-before u run the things, you need to do
-'cd hardhat-blockchain'
-'npm install'
-
-run webserver.py in webserver directory otherwise wont work
-
-
-# GitBooks Blockchain-backed Document System
+# Et Alia 
+Polkadot-backed Version Control System
 
 ## Overview
 This project is a simplified GitHub-style system for uploading, committing, and tracking markdown documents. 
@@ -47,6 +40,9 @@ You can find our contract on the Westend Asset Hut Block Explorer [here](https:/
 
 ## Screenshots of our UI
 
+## Figma Mockups
+https://www.figma.com/design/HKqvOkKSrs8Fgd4tigzxXD/author-collab-project?node-id=0-1&t=TjTgae4VlDGyKlRZ-1
+
 ## Demo Video
 
 - insert link here
@@ -60,3 +56,8 @@ Set the environment variable `SERVER_PK` to the private key the server will use 
 
 ```bash
 pip install -r requirements.txt
+
+To run the program, 'cd hardhat-blockchain' 'npm install'
+run webserver.py in webserver directory otherwise wont work
+
+
