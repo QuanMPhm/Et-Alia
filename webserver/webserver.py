@@ -257,6 +257,72 @@ def get_users():
     ]
     return jsonify(users_data)
 
+def get_diff_summary():
+    try:
+        diff_output = run_git_command(["diff", "HEAD~1", "HEAD"])
+        summary_lines = []
+        for line in diff_output.splitlines():
+            if line.startswith('+') and not line.startswith('+++'):
+                summary_lines.append(f"🟢 {line[1:].strip()}")
+            elif line.startswith('-') and not line.startswith('---'):
+                summary_lines.append(f"🔴 {line[1:].strip()}")
+        return summary_lines
+    except Exception as e:
+        print(f"Error getting diff: {e}")
+        return ["No diff available."]
+
+@app.route('/summary/<commit_hash>', methods=['GET'])
+def get_commit_summary(commit_hash):
+    try:
+        diff_output = run_git_command(["show", "--no-color", "--no-prefix", commit_hash])
+
+        added_lines = []
+        removed_lines = []
+        
+        for line in diff_output.splitlines():
+            if line.startswith('+') and not line.startswith('+++'):
+                added_lines.append(line[1:].strip())
+            elif line.startswith('-') and not line.startswith('---'):
+                removed_lines.append(line[1:].strip())
+
+        # Clean up: Remove exact matches (i.e., added and removed identical lines)
+        final_added = []
+        final_removed = []
+
+        removed_copy = removed_lines.copy()  # Copy so we can modify it
+
+        for added in added_lines:
+            if added in removed_copy:
+                removed_copy.remove(added)  # Cancel it out if identical
+            else:
+                final_added.append(added)
+
+        for removed in removed_copy:
+            final_removed.append(removed)
+
+        # Prepare summary text
+        summary_parts = []
+        for r in final_removed:
+            summary_parts.append(f"Removed: {r}")
+        for a in final_added:
+            summary_parts.append(f"Added: {a}")
+
+        if not summary_parts:
+            summary = "No meaningful content changes detected."
+        else:
+            summary = "\n".join(summary_parts)
+
+        return jsonify({"summary": summary})
+
+    except Exception as e:
+        print(f"Error generating summary: {e}")
+        return jsonify({"summary": "Error generating summary."}), 500
+
+@app.route('/diff_summary', methods=['GET'])
+def diff_summary():
+    summary = get_diff_summary()
+    return jsonify(summary)
+
 
 if __name__ == '__main__':
     with app.app_context():
