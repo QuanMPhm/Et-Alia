@@ -135,29 +135,43 @@ window.addEventListener('DOMContentLoaded', function() {
   });
 
   function pollApprovalStatus() {
-    const intervalId = setInterval(async () => {
-      if (!waitingForApproval) {
-        clearInterval(intervalId);
-        return;
-      }
+  const intervalId = setInterval(async () => {
+    if (!waitingForApproval) {
+      clearInterval(intervalId);
+      return;
+    }
 
-      try {
-        const response = await fetch('/pending_commits');
-        if (response.ok) {
-          const pending = await response.json();
-          if (pending.length === 0) {
-            clearInterval(intervalId);
-            waitingForApproval = false;
-            statusMessage.textContent = "✅ Your upload has been approved!";
-          }
+    try {
+      const response = await fetch('/pending_commits');
+      if (response.ok) {
+        const pending = await response.json();
+        if (pending.length === 0) {
+          clearInterval(intervalId);
+          waitingForApproval = false;
+          statusMessage.textContent = "✅ Your upload has been approved!";
         } else {
-          console.error('Failed to check pending commits');
+          // Show the latest pending commit diffs
+          const latest = pending[pending.length - 1];
+
+          const diffDisplay = `
+            <h3>Pending Changes:</h3>
+            <div style="background:#f0f0f0; padding:10px; border-radius:8px; margin-top:10px;">
+              <strong>Filename:</strong> ${latest.filename}<br>
+              <strong>Message:</strong> ${latest.message}<br><br>
+              <pre>${latest.diff_summary || "Loading diff..."}</pre>
+            </div>
+          `;
+          statusMessage.innerHTML = `✅ Submission sent. Waiting for approval...<br>${diffDisplay}`;
         }
-      } catch (error) {
-        console.error("Error polling approval status:", error);
+      } else {
+        console.error('Failed to check pending commits');
       }
-    }, 3000);
-  }
+    } catch (error) {
+      console.error("Error polling approval status:", error);
+    }
+  }, 3000);
+}
+
 
   window.addEventListener('storage', (event) => {
     if (event.key === 'rejection_reason' && event.newValue) {
@@ -194,16 +208,32 @@ window.addEventListener('DOMContentLoaded', function() {
           return;
         }
         for (const commit of commits) {
-          const commitDiv = document.createElement('div');
-          commitDiv.innerHTML = `
-            <p><strong>Hash:</strong> ${commit.commit_hash}</p>
-            <p><strong>Author:</strong> ${commit.author_name}</p>
-            <p><strong>Message:</strong> ${commit.commit_message}</p>
-            <p><strong>Date:</strong> ${commit.date_iso}</p>
-            <hr>
-          `;
-          commitHistory.appendChild(commitDiv);
-        }
+  const commitDiv = document.createElement('div');
+  commitDiv.innerHTML = `
+    <p><strong>Hash:</strong> ${commit.commit_hash}</p>
+    <p><strong>Author:</strong> ${commit.author_name}</p>
+    <p><strong>Message:</strong> ${commit.commit_message}</p>
+    <p><strong>Date:</strong> ${commit.date_iso}</p>
+    <div id="diff-${commit.commit_hash}" style="margin-left:10px; color:gray;">Loading diff...</div>
+    <hr>
+  `;
+  commitHistory.appendChild(commitDiv);
+
+  // Fetch the diff summary for each commit
+  try {
+    const diffResponse = await fetch(`/summary/${commit.commit_hash}`);
+    if (diffResponse.ok) {
+      const diffData = await diffResponse.json();
+      document.getElementById(`diff-${commit.commit_hash}`).textContent = diffData.summary;
+    } else {
+      document.getElementById(`diff-${commit.commit_hash}`).textContent = "Diff summary unavailable.";
+    }
+  } catch (error) {
+    console.error(error);
+    document.getElementById(`diff-${commit.commit_hash}`).textContent = "Diff summary unavailable.";
+  }
+}
+
       } else {
         commitHistory.textContent = "Failed to load commits.";
       }

@@ -154,7 +154,27 @@ def upload_markdown():
 
 @app.route('/pending_commits', methods=['GET'])
 def get_pending_commits():
-    return jsonify(pending_commits)
+    result = []
+
+    for commit in pending_commits:
+        filepath = os.path.join(FULL_REPO_PATH, commit["filename"])
+        if os.path.exists(filepath):
+            with open(filepath, 'r', encoding='utf-8') as f:
+                current_content = f.read()
+        else:
+            current_content = ""
+
+        diff_summary = compute_diff(current_content, commit["content"])
+
+        result.append({
+            "filename": commit["filename"],
+            "message": commit["message"],
+            "content": commit["content"],
+            "diff_summary": diff_summary,
+        })
+
+    return jsonify(result)
+
 
 @app.route('/approve_commit', methods=['POST'])
 def approve_commit():
@@ -307,6 +327,30 @@ def signup():
     db.session.commit()
 
     return jsonify({"message": "Signup successful!"}), 201
+
+import difflib
+
+def compute_diff(old_content, new_content):
+    old_lines = old_content.splitlines()
+    new_lines = new_content.splitlines()
+
+    diff = difflib.unified_diff(old_lines, new_lines, lineterm='')
+    meaningful_changes = []
+
+    for line in diff:
+        if line.startswith('---') or line.startswith('+++') or line.startswith('@@'):
+            continue  # Ignore diff metadata
+        if line.startswith('+'):
+            if line[1:].strip() == "":  # Ignore pure blank line additions
+                continue
+            meaningful_changes.append(f"🟢 {line[1:].strip()}")
+        elif line.startswith('-'):
+            if line[1:].strip() == "":  # Ignore pure blank line deletions
+                continue
+            meaningful_changes.append(f"🔴 {line[1:].strip()}")
+
+    return "\n".join(meaningful_changes) if meaningful_changes else "No meaningful changes."
+
 
 @app.route('/login', methods=['POST'])
 def login():
