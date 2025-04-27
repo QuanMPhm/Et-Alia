@@ -39,6 +39,16 @@ It uses a blockchain backend (Hardhat local node) to store commit metadata and a
 - Approvers can view documents but not upload new ones
 - Hardhat node used for local Ethereum simulation
 
+- ## Smart Contract
+
+- This is how our smart contract works...
+
+- ## Screenshots of our UI
+
+- ## Demo Video
+
+- insert link here
+
 ## How to Run
 
 1. Clone the repo.
