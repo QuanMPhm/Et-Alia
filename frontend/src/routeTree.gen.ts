@@ -14,7 +14,10 @@ import { Route as rootRoute } from './routes/__root'
 import { Route as SignupImport } from './routes/signup'
 import { Route as LoginImport } from './routes/login'
 import { Route as FaqImport } from './routes/faq'
+import { Route as EditorImport } from './routes/editor'
 import { Route as ContactImport } from './routes/contact'
+import { Route as AuthButtonsImport } from './routes/auth-buttons'
+import { Route as ApproveImport } from './routes/approve'
 import { Route as AboutImport } from './routes/about'
 import { Route as IndexImport } from './routes/index'
 import { Route as DocsIndexImport } from './routes/docs/index'
@@ -40,9 +43,27 @@ const FaqRoute = FaqImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const EditorRoute = EditorImport.update({
+  id: '/editor',
+  path: '/editor',
+  getParentRoute: () => rootRoute,
+} as any)
+
 const ContactRoute = ContactImport.update({
   id: '/contact',
   path: '/contact',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const AuthButtonsRoute = AuthButtonsImport.update({
+  id: '/auth-buttons',
+  path: '/auth-buttons',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const ApproveRoute = ApproveImport.update({
+  id: '/approve',
+  path: '/approve',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -88,11 +109,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AboutImport
       parentRoute: typeof rootRoute
     }
+    '/approve': {
+      id: '/approve'
+      path: '/approve'
+      fullPath: '/approve'
+      preLoaderRoute: typeof ApproveImport
+      parentRoute: typeof rootRoute
+    }
+    '/auth-buttons': {
+      id: '/auth-buttons'
+      path: '/auth-buttons'
+      fullPath: '/auth-buttons'
+      preLoaderRoute: typeof AuthButtonsImport
+      parentRoute: typeof rootRoute
+    }
     '/contact': {
       id: '/contact'
       path: '/contact'
       fullPath: '/contact'
       preLoaderRoute: typeof ContactImport
+      parentRoute: typeof rootRoute
+    }
+    '/editor': {
+      id: '/editor'
+      path: '/editor'
+      fullPath: '/editor'
+      preLoaderRoute: typeof EditorImport
       parentRoute: typeof rootRoute
     }
     '/faq': {
@@ -138,7 +180,10 @@ declare module '@tanstack/react-router' {
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/approve': typeof ApproveRoute
+  '/auth-buttons': typeof AuthButtonsRoute
   '/contact': typeof ContactRoute
+  '/editor': typeof EditorRoute
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
@@ -149,7 +194,10 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/approve': typeof ApproveRoute
+  '/auth-buttons': typeof AuthButtonsRoute
   '/contact': typeof ContactRoute
+  '/editor': typeof EditorRoute
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
@@ -161,7 +209,10 @@ export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/approve': typeof ApproveRoute
+  '/auth-buttons': typeof AuthButtonsRoute
   '/contact': typeof ContactRoute
+  '/editor': typeof EditorRoute
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
@@ -174,7 +225,10 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
+    | '/approve'
+    | '/auth-buttons'
     | '/contact'
+    | '/editor'
     | '/faq'
     | '/login'
     | '/signup'
@@ -184,7 +238,10 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
+    | '/approve'
+    | '/auth-buttons'
     | '/contact'
+    | '/editor'
     | '/faq'
     | '/login'
     | '/signup'
@@ -194,7 +251,10 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/about'
+    | '/approve'
+    | '/auth-buttons'
     | '/contact'
+    | '/editor'
     | '/faq'
     | '/login'
     | '/signup'
@@ -206,7 +266,10 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  ApproveRoute: typeof ApproveRoute
+  AuthButtonsRoute: typeof AuthButtonsRoute
   ContactRoute: typeof ContactRoute
+  EditorRoute: typeof EditorRoute
   FaqRoute: typeof FaqRoute
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
@@ -217,7 +280,10 @@ export interface RootRouteChildren {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  ApproveRoute: ApproveRoute,
+  AuthButtonsRoute: AuthButtonsRoute,
   ContactRoute: ContactRoute,
+  EditorRoute: EditorRoute,
   FaqRoute: FaqRoute,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
@@ -237,7 +303,10 @@ export const routeTree = rootRoute
       "children": [
         "/",
         "/about",
+        "/approve",
+        "/auth-buttons",
         "/contact",
+        "/editor",
         "/faq",
         "/login",
         "/signup",
@@ -251,8 +320,17 @@ export const routeTree = rootRoute
     "/about": {
       "filePath": "about.tsx"
     },
+    "/approve": {
+      "filePath": "approve.tsx"
+    },
+    "/auth-buttons": {
+      "filePath": "auth-buttons.tsx"
+    },
     "/contact": {
       "filePath": "contact.tsx"
+    },
+    "/editor": {
+      "filePath": "editor.tsx"
     },
     "/faq": {
       "filePath": "faq.tsx"

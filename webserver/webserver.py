@@ -11,7 +11,7 @@ from web3 import Web3
 # --- Flask setup ---
 app = Flask(__name__)
 app.secret_key = os.urandom(24)  # Required for sessions
-app.config.update(SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Lax")
+app.config.update(SESSION_COOKIE_HTTPONLY=False, SESSION_COOKIE_SAMESITE="Lax")
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 # --- Database setup ---
@@ -140,7 +140,14 @@ def initialize_repo():
 @app.before_request
 def check_authentication():
     # List of endpoints that don't require authentication
-    public_endpoints = ["login", "signup", "root", "serve_static"]
+    public_endpoints = [
+        "login",
+        "signup",
+        "root",
+        "serve_static",
+        "check_session",
+        "users",
+    ]
 
     if request.endpoint not in public_endpoints:
         if "user_id" not in session:
@@ -375,8 +382,9 @@ def login():
 
 @app.route("/users", methods=["GET"])
 def get_users():
-    users = User.query.all()
-    return jsonify([{"email": user.email, "role": user.role} for user in users])
+    if "user_id" in session:
+        users = User.query.all()
+        return jsonify([{"email": user.email, "role": user.role} for user in users])
 
 
 @app.route("/check-session", methods=["GET"])

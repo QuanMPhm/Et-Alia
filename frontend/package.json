@@ -14,8 +14,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@mdxeditor/editor": "^3.31.0",
     "@tailwindcss/vite": "^4.1.4",
     "@tanstack/react-form": "^1.7.0",
+    "@tanstack/react-query": "^5.74.4",
     "@tanstack/react-router": "^1.117.1",
     "@tanstack/react-router-devtools": "^1.117.1",
     "arktype": "^2.1.20",
