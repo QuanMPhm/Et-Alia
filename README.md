@@ -14,7 +14,7 @@ Designed with flexibility and transparency in mind, Et Alia allows users to **up
 
 ---
 
-## 🛠 Tech Stack
+## Tech Stack
 
 - **Frontend**:
   - Vanilla HTML, CSS, JavaScript, Tailwind
