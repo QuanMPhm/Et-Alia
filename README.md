@@ -39,15 +39,15 @@ It uses a blockchain backend (Hardhat local node) to store commit metadata and a
 - Approvers can view documents but not upload new ones
 - Hardhat node used for local Ethereum simulation
 
-- ## Smart Contract
+## Smart Contract
 
 Every time a commit is created, our backend will make a call to our [smart contract](./hardhat-blockchain/contracts/CommitStorage.sol) deployed on the Westend Asset Hub. Specifically, the backend calls [`alertNewCommit()`](./hardhat-blockchain/contracts/CommitStorage.sol#L7) with the commit's metadata, and the contract will emit an event contain this metadata. This allows the commit metadata to be stored on the blockchain, and therefore allows any user to verify the authenticity and accuracy of any file changes by fetching the commit metadata from the blockchain themselves.
 
 You can find our contract on the Westend Asset Hut Block Explorer [here](https://blockscout-asset-hub.parity-chains-scw.parity.io/address/0x031a0698CCcB123504d0320b5edC01128529901A)
 
-- ## Screenshots of our UI
+## Screenshots of our UI
 
-- ## Demo Video
+## Demo Video
 
 - insert link here
 
