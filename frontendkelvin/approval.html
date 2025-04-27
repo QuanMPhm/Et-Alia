@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Approval Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+    #topBar {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    #userInfo {
+      font-size: 16px;
+      margin-right: 10px;
+    }
+    #logoutButton {
+      padding: 5px 10px;
+      background: #d9534f;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .commitCard {
+      width: 80%;
+      margin: 20px auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+      text-align: left;
+      white-space: pre-wrap;
+      overflow: visible;
+    }
+    .buttonGroup {
+      margin-top: 10px;
+    }
+    .buttonGroup button {
+      margin-right: 10px;
+      padding: 5px 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .approveButton {
+      background: #28a745;
+      color: white;
+    }
+    .rejectButton {
+      background: #dc3545;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+
+<div id="topBar">
+  <div id="userInfo"></div>
+  <button id="logoutButton" style="display: none;">Logout</button>
+</div>
+
+<h1>Editor Approval Panel</h1>
+
+<div id="pendingCommits">Loading pending submissions...</div>
+
+<script>
+window.addEventListener('DOMContentLoaded', function() {
+  const user = JSON.parse(sessionStorage.getItem('user'));
+  const userInfo = document.getElementById('userInfo');
+  const logoutButton = document.getElementById('logoutButton');
+  const pendingCommitsDiv = document.getElementById('pendingCommits');
+
+  if (user) {
+    userInfo.textContent = `${user.email} (${user.role})`;
+    logoutButton.style.display = 'inline-block';
+  }
+
+  logoutButton.addEventListener('click', () => {
+    sessionStorage.removeItem('user');
+    window.location.href = 'login.html';
+  });
+
+  async function loadPendingCommits() {
+    try {
+      const response = await fetch('/pending_commits');
+      if (response.ok) {
+        const commits = await response.json();
+        pendingCommitsDiv.innerHTML = "";
+
+        if (commits.length === 0) {
+          pendingCommitsDiv.textContent = "No pending uploads.";
+          return;
+        }
+
+        commits.forEach((commit, index) => {
+          const commitDiv = document.createElement('div');
+          commitDiv.className = 'commitCard';
+          commitDiv.innerHTML = `
+            <p><strong>Filename:</strong> ${commit.filename}</p>
+            <p><strong>Message:</strong> ${commit.message}</p>
+            <pre><strong>Content:</strong>\n${commit.content}</pre>
+            <div class="buttonGroup">
+              <button class="approveButton" onclick="approveCommit(${index})">Approve</button>
+              <button class="rejectButton" onclick="rejectCommit(${index})">Reject</button>
+            </div>
+          `;
+          pendingCommitsDiv.appendChild(commitDiv);
+        });
+      } else {
+        pendingCommitsDiv.textContent = "Failed to load pending uploads.";
+      }
+    } catch (error) {
+      console.error(error);
+      pendingCommitsDiv.textContent = "Failed to load pending uploads.";
+    }
+  }
+
+  window.approveCommit = async function(index) {
+    if (!confirm("Are you sure you want to APPROVE this upload?")) return;
+    try {
+      const response = await fetch('/approve_commit', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ index: index })
+      });
+      if (response.ok) {
+        alert("✅ Commit approved successfully!");
+        loadPendingCommits();
+      } else {
+        alert("Approval failed.");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Approval failed.");
+    }
+  }
+
+  window.rejectCommit = async function(index) {
+    const reason = prompt("Enter rejection reason:");
+    if (!reason) {
+      alert("Rejection canceled.");
+      return;
+    }
+    try {
+      const response = await fetch('/reject_commit', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ index: index, reason: reason })
+      });
+      if (response.ok) {
+        // Notify the Author via sessionStorage event
+        localStorage.setItem('rejection_reason', reason);
+        alert("❌ Commit rejected successfully!");
+        loadPendingCommits();
+      } else {
+        alert("Rejection failed.");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Rejection failed.");
+    }
+  }
+
+  loadPendingCommits();
+});
+</script>
+
+</body>
+</html>

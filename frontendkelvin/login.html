@@ -64,11 +64,19 @@
 
       const data = await response.json();
       if (response.ok) {
-        // ✅ Save clean user info to localStorage
+        // ✅ Save user info into sessionStorage
         sessionStorage.setItem('user', JSON.stringify({ email, role: data.role }));
 
         alert(`Login successful! Role: ${data.role}`);
-        window.location.href = 'index.html';  // Redirect to main page
+        
+        // ➡️ Redirect based on user role
+        if (data.role.toLowerCase() === 'author') {
+          window.location.href = 'editor.html';
+        } else if (data.role.toLowerCase() === 'editor') {
+          window.location.href = 'approval.html';
+        } else {
+          alert('Unknown role, cannot redirect.');
+        }
       } else {
         alert(data.error);
       }

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Editor Upload Page (Waiting for Approval)</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+    #topBar {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    #userInfo {
+      font-size: 16px;
+      margin-right: 10px;
+    }
+    #logoutButton {
+      padding: 5px 10px;
+      background: #d9534f;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #uploadForm {
+      margin-bottom: 30px;
+    }
+    #markdownDisplay, #commitHistory {
+      width: 60%;
+      margin: 0 auto 20px auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+      text-align: left;
+      white-space: pre-wrap;
+      overflow: visible;
+    }
+    #statusMessage {
+      margin-top: 20px;
+      font-size: 18px;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+
+<div id="topBar">
+  <div id="userInfo"></div>
+  <button id="logoutButton" style="display: none;">Logout</button>
+</div>
+
+<h1>Upload a Markdown File for Approval</h1>
+
+<form id="uploadForm">
+  <input type="file" id="fileInput" accept=".md">
+  <input type="text" id="commitMessage" placeholder="Commit message (optional)">
+  <button type="submit">Submit for Approval</button>
+</form>
+
+<div id="statusMessage">No submission yet.</div>
+
+<h2>Current Markdown:</h2>
+<div id="markdownDisplay">No file uploaded yet.</div>
+
+<h2>Commit History:</h2>
+<div id="commitHistory">No commits yet.</div>
+
+<h2>Registered Users:</h2>
+<div id="usersList">Loading users...</div>
+
+<script>
+window.addEventListener('DOMContentLoaded', function() {
+  const user = JSON.parse(sessionStorage.getItem('user'));
+  const userInfo = document.getElementById('userInfo');
+  const logoutButton = document.getElementById('logoutButton');
+  const uploadForm = document.getElementById('uploadForm');
+  const fileInput = document.getElementById('fileInput');
+  const commitMessage = document.getElementById('commitMessage');
+  const markdownDisplay = document.getElementById('markdownDisplay');
+  const commitHistory = document.getElementById('commitHistory');
+  const usersList = document.getElementById('usersList');
+  const statusMessage = document.getElementById('statusMessage');
+
+  let waitingForApproval = false;
+
+  if (user) {
+    userInfo.textContent = `${user.email} (${user.role})`;
+    logoutButton.style.display = 'inline-block';
+  }
+
+  logoutButton.addEventListener('click', () => {
+    sessionStorage.removeItem('user');
+    window.location.href = 'login.html';
+  });
+
+  uploadForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const file = fileInput.files[0];
+    if (!file) {
+      alert("Please select a file.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('message', commitMessage.value || `Commit at ${new Date().toISOString()}`);
+
+    try {
+      const response = await fetch('/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (response.ok) {
+        waitingForApproval = true;
+        statusMessage.textContent = "✅ Submission sent. Waiting for editor approval...";
+        pollApprovalStatus();
+      } else {
+        const error = await response.json();
+        alert("Upload failed: " + (error.error || "Unknown error"));
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Upload failed.");
+    }
+  });
+
+  function pollApprovalStatus() {
+    const intervalId = setInterval(async () => {
+      if (!waitingForApproval) {
+        clearInterval(intervalId);
+        return;
+      }
+
+      try {
+        const response = await fetch('/pending_commits');
+        if (response.ok) {
+          const pending = await response.json();
+          if (pending.length === 0) {
+            clearInterval(intervalId);
+            waitingForApproval = false;
+            statusMessage.textContent = "✅ Your upload has been approved!";
+          }
+        } else {
+          console.error('Failed to check pending commits');
+        }
+      } catch (error) {
+        console.error("Error polling approval status:", error);
+      }
+    }, 3000);
+  }
+
+  window.addEventListener('storage', (event) => {
+    if (event.key === 'rejection_reason' && event.newValue) {
+      const reason = event.newValue;
+      statusMessage.textContent = `❌ Your upload was rejected: ${reason}`;
+      waitingForApproval = false;
+      sessionStorage.removeItem('rejection_reason');
+    }
+  });
+
+  async function loadMarkdown() {
+    try {
+      const response = await fetch('/current_markdown');
+      if (response.ok) {
+        const data = await response.json();
+        markdownDisplay.textContent = data.content || "No file uploaded yet.";
+      } else {
+        markdownDisplay.textContent = "Failed to load markdown.";
+      }
+    } catch (error) {
+      console.error(error);
+      markdownDisplay.textContent = "Failed to load markdown.";
+    }
+  }
+
+  async function loadCommits() {
+    try {
+      const response = await fetch('/commits');
+      if (response.ok) {
+        const commits = await response.json();
+        commitHistory.innerHTML = "";
+        if (commits.length === 0) {
+          commitHistory.textContent = "No commits yet.";
+          return;
+        }
+        for (const commit of commits) {
+          const commitDiv = document.createElement('div');
+          commitDiv.innerHTML = `
+            <p><strong>Hash:</strong> ${commit.commit_hash}</p>
+            <p><strong>Author:</strong> ${commit.author_name}</p>
+            <p><strong>Message:</strong> ${commit.commit_message}</p>
+            <p><strong>Date:</strong> ${commit.date_iso}</p>
+            <hr>
+          `;
+          commitHistory.appendChild(commitDiv);
+        }
+      } else {
+        commitHistory.textContent = "Failed to load commits.";
+      }
+    } catch (error) {
+      console.error(error);
+      commitHistory.textContent = "Failed to load commits.";
+    }
+  }
+
+  async function loadUsers() {
+    try {
+      const response = await fetch('/users');
+      if (response.ok) {
+        const users = await response.json();
+        usersList.innerHTML = "";
+
+        if (users.length === 0) {
+          usersList.textContent = "No registered users yet.";
+          return;
+        }
+
+        users.forEach(user => {
+          const userDiv = document.createElement('div');
+          userDiv.innerHTML = `
+            <p><strong>Email:</strong> ${user.email} | <strong>Role:</strong> ${user.role}</p>
+          `;
+          usersList.appendChild(userDiv);
+        });
+      } else {
+        usersList.textContent = "Failed to load users.";
+      }
+    } catch (error) {
+      console.error(error);
+      usersList.textContent = "Failed to load users.";
+    }
+  }
+
+  loadMarkdown();
+  loadCommits();
+  loadUsers();
+});
+</script>
+
+</body>
+</html>
+
