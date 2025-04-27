@@ -58,40 +58,6 @@
       background: #dc3545;
       color: white;
     }
-    #conflictModal {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.6);
-      z-index: 1000;
-      justify-content: center;
-      align-items: center;
-    }
-    #conflictBox {
-      background: white;
-      padding: 30px;
-      border-radius: 10px;
-      text-align: center;
-    }
-    #conflictBox button {
-      margin: 10px;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    .keepA {
-      background: #007bff;
-      color: white;
-    }
-    .keepB {
-      background: #28a745;
-      color: white;
-    }
-    .merge {
-      background: #ffc107;
-      color: black;
-    }
   </style>
 </head>
 <body>
@@ -105,28 +71,12 @@
 
 <div id="pendingCommits">Loading pending submissions...</div>
 
-<!-- Conflict Resolver Modal -->
-<div id="conflictModal">
-  <div id="conflictBox">
-    <h3>Conflict detected. Choose an action:</h3>
-    <button class="keepA" id="btnKeepA">Keep Server Copy</button>
-    <button class="keepB" id="btnKeepB">Use Uploaded Copy</button>
-    <button class="merge" id="btnMerge">Merge Manually</button>
-  </div>
-</div>
-
 <script>
 window.addEventListener('DOMContentLoaded', function() {
   const user = JSON.parse(sessionStorage.getItem('user'));
   const userInfo = document.getElementById('userInfo');
   const logoutButton = document.getElementById('logoutButton');
   const pendingCommitsDiv = document.getElementById('pendingCommits');
-  const conflictModal = document.getElementById('conflictModal');
-  const btnKeepA = document.getElementById('btnKeepA');
-  const btnKeepB = document.getElementById('btnKeepB');
-  const btnMerge = document.getElementById('btnMerge');
-
-  let pendingConflictIndex = null; // Track which commit had conflict
 
   if (user) {
     userInfo.textContent = `${user.email} (${user.role})`;
@@ -164,7 +114,8 @@ window.addEventListener('DOMContentLoaded', function() {
             </div>
           `;
           pendingCommitsDiv.appendChild(commitDiv);
-          fetchAndDisplayDiff(commit.content, index);
+
+          fetchAndDisplayDiff(commit.content, index); // Fetch live diff
         });
       } else {
         pendingCommitsDiv.textContent = "Failed to load pending uploads.";
@@ -214,20 +165,16 @@ window.addEventListener('DOMContentLoaded', function() {
   }
 
   window.approveCommit = async function(index) {
+    if (!confirm("Are you sure you want to APPROVE this upload?")) return;
     try {
       const response = await fetch('/approve_commit', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ index: index })
       });
-
       if (response.ok) {
         alert("✅ Commit approved successfully!");
         loadPendingCommits();
-      } else if (response.status === 409) {
-        // Conflict detected
-        pendingConflictIndex = index;
-        conflictModal.style.display = 'flex';
       } else {
         alert("Approval failed.");
       }
@@ -235,7 +182,7 @@ window.addEventListener('DOMContentLoaded', function() {
       console.error(error);
       alert("Approval failed.");
     }
-  };
+  }
 
   window.rejectCommit = async function(index) {
     const reason = prompt("Enter rejection reason:");
@@ -259,31 +206,6 @@ window.addEventListener('DOMContentLoaded', function() {
     } catch (error) {
       console.error(error);
       alert("Rejection failed.");
-    }
-  }
-
-  // Handle Conflict Choices
-  btnKeepA.addEventListener('click', () => resolveConflict('keep_a'));
-  btnKeepB.addEventListener('click', () => resolveConflict('keep_b'));
-  btnMerge.addEventListener('click', () => resolveConflict('merge'));
-
-  async function resolveConflict(resolution) {
-    try {
-      const response = await fetch('/approve_commit', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ index: pendingConflictIndex, resolution: resolution })
-      });
-      if (response.ok) {
-        alert("✅ Conflict resolved and commit saved!");
-        conflictModal.style.display = 'none';
-        loadPendingCommits();
-      } else {
-        alert("❌ Conflict resolution failed.");
-      }
-    } catch (error) {
-      console.error(error);
-      alert("Conflict resolution failed.");
     }
   }
 
