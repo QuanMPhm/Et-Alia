@@ -28,6 +28,9 @@ FULL_REPO_PATH = os.path.join(REPO_DIR, REPO_NAME)
 MARKDOWN_FILENAME = "file.md"
 
 # --- Globals ---
+CONTRACT_ADDRESS = "0x031a0698CCcB123504d0320b5edC01128529901A"
+NODE_URL = 'https://westend-asset-hub-eth-rpc.polkadot.io'
+SERVER_PK = os.environ["SERVER_PK"]
 hh_node = None
 w3 = None
 commit_storage = None
@@ -84,7 +87,7 @@ def deploy_contract():
 
 def connect_web3(contract_address):
     global w3, commit_storage
-    w3 = Web3(Web3.HTTPProvider("http://127.0.0.1:8545"))
+    w3 = Web3(Web3.HTTPProvider(NODE_URL))
     assert w3.is_connected(), "Web3 not connected!"
 
     abi_path = os.path.join(BASE_DIR, "blockchain", "contract_abi.json")
@@ -92,7 +95,6 @@ def connect_web3(contract_address):
         abi = json.load(f)
 
     commit_storage = w3.eth.contract(address=contract_address, abi=abi)
-    w3.eth.default_account = w3.eth.accounts[0]
 
 
 def kill_node():
@@ -189,7 +191,27 @@ def upload_markdown():
 
 @app.route("/pending_commits", methods=["GET"])
 def get_pending_commits():
-    return jsonify(pending_commits)
+    result = []
+
+    for commit in pending_commits:
+        filepath = os.path.join(FULL_REPO_PATH, commit["filename"])
+        if os.path.exists(filepath):
+            with open(filepath, 'r', encoding='utf-8') as f:
+                current_content = f.read()
+        else:
+            current_content = ""
+
+        diff_summary = compute_diff(current_content, commit["content"])
+
+        result.append({
+            "filename": commit["filename"],
+            "message": commit["message"],
+            "content": commit["content"],
+            "diff_summary": diff_summary,
+        })
+
+    return jsonify(result)
+
 
 
 @app.route("/approve_commit", methods=["POST"])
@@ -207,6 +229,8 @@ def approve_commit():
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(commit["content"])
 
+
+    # Commit changes to local git repo
     run_git_command(["add", commit["filename"]])
     run_git_command(["commit", "-m", commit["message"]])
 
@@ -215,12 +239,34 @@ def approve_commit():
         "\n", 3
     )
 
-    tx_hash = commit_storage.functions.saveCommit(
-        commit_hash, author_name, commit_message_saved, date_readable
-    ).transact()
+    # Save commit to blockchain
+    # First obtain user's private key for signing, for now we're just using a test key
+    account = w3.eth.account.from_key(SERVER_PK) # Change this to the actual private key
+    nonce = w3.eth.get_transaction_count(account.address)
+
+    commit = [
+        commit["filename"], 
+        Web3.to_bytes(hexstr="0x" + commit_hash), 
+        Web3.to_bytes(hexstr="0x" + commit_hash), 
+        author_name, 
+        date_readable
+    ]
+    transaction = commit_storage.functions.alertNewCommit(*commit).build_transaction({
+        'from': account.address,
+        'nonce': nonce,
+        'gas': 2000000,
+        'gasPrice': Web3.to_wei('20', 'gwei')
+    })
+
+    signed_txn = w3.eth.account.sign_transaction(transaction, private_key=SERVER_PK)
+
+    # Send transaction
+    tx_hash = w3.eth.send_raw_transaction(signed_txn.raw_transaction)
+    print(f"Transaction hash: {tx_hash.hex()}")
 
     w3.eth.wait_for_transaction_receipt(tx_hash)
-    return jsonify({"message": "Commit approved and saved."}), 200
+    return jsonify({"message": "Commit approved and metadata saved to blockchain!"}), 200
+
 
 
 @app.route("/reject_commit", methods=["POST"])

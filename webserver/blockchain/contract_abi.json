@@ -1,150 +1,72 @@
 [
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "commitHash",
-          "type": "string"
-        },
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "authorName",
-          "type": "string"
-        },
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "commitMessage",
-          "type": "string"
-        },
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "dateIso",
-          "type": "string"
-        }
-      ],
-      "name": "CommitSaved",
-      "type": "event"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "name": "commits",
-      "outputs": [
-        {
-          "internalType": "string",
-          "name": "commitHash",
-          "type": "string"
-        },
-        {
-          "internalType": "string",
-          "name": "authorName",
-          "type": "string"
-        },
-        {
-          "internalType": "string",
-          "name": "commitMessage",
-          "type": "string"
-        },
-        {
-          "internalType": "string",
-          "name": "dateIso",
-          "type": "string"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "index",
-          "type": "uint256"
-        }
-      ],
-      "name": "getCommit",
-      "outputs": [
-        {
-          "components": [
-            {
-              "internalType": "string",
-              "name": "commitHash",
-              "type": "string"
-            },
-            {
-              "internalType": "string",
-              "name": "authorName",
-              "type": "string"
-            },
-            {
-              "internalType": "string",
-              "name": "commitMessage",
-              "type": "string"
-            },
-            {
-              "internalType": "string",
-              "name": "dateIso",
-              "type": "string"
-            }
-          ],
-          "internalType": "struct CommitStorage.Commit",
-          "name": "",
-          "type": "tuple"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "getCommitsCount",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "string",
-          "name": "_commitHash",
-          "type": "string"
-        },
-        {
-          "internalType": "string",
-          "name": "_authorName",
-          "type": "string"
-        },
-        {
-          "internalType": "string",
-          "name": "_commitMessage",
-          "type": "string"
-        },
-        {
-          "internalType": "string",
-          "name": "_dateIso",
-          "type": "string"
-        }
-      ],
-      "name": "saveCommit",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    }
-  ]
-  
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "fileName",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes20",
+        "name": "commitHash",
+        "type": "bytes20"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes20",
+        "name": "parentHash",
+        "type": "bytes20"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "authorName",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "commitDate",
+        "type": "uint64"
+      }
+    ],
+    "name": "CommitSaved",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "fileName",
+        "type": "string"
+      },
+      {
+        "internalType": "bytes20",
+        "name": "commitHash",
+        "type": "bytes20"
+      },
+      {
+        "internalType": "bytes20",
+        "name": "parentHash",
+        "type": "bytes20"
+      },
+      {
+        "internalType": "string",
+        "name": "authorName",
+        "type": "string"
+      },
+      {
+        "internalType": "uint64",
+        "name": "commitDate",
+        "type": "uint64"
+      }
+    ],
+    "name": "alertNewCommit",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]
