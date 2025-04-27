@@ -141,7 +141,10 @@ Polkadot's architecture induces:
 3. DOT Holders Anonymous (2023) "12 Steps for Recovering from Parachain Auctions"
 `;
 
-function SaveButton() {
+type Approval = {
+  type: "approve" | "edit";
+};
+function SaveButton({ type }: Approval) {
   // TODO: implement actual submission
   const [submitted, setSubmitted] = useState(false);
   const navigate = useNavigate();
@@ -150,13 +153,17 @@ function SaveButton() {
     let timer: number | undefined;
     if (submitted) {
       timer = setTimeout(() => {
-        navigate({ to: "/about" });
+        if (type === "approve") {
+          navigate({ to: "/approved" });
+        } else {
+          navigate({ to: "/approve" });
+        }
       }, 1000);
     }
     return () => {
       clearTimeout(timer);
     };
-  }, [submitted, navigate]);
+  }, [submitted, navigate, type]);
 
   return (
     <button
@@ -166,12 +173,18 @@ function SaveButton() {
       )}
       onClick={() => setSubmitted(true)}
       disabled={submitted}>
-      {submitted ? "Submitting..." : "Submit for Approval"}
+      {type === "approve"
+        ? submitted
+          ? "Approving..."
+          : "Mark Approved"
+        : submitted
+          ? "Submitting..."
+          : "Submit for Approval"}
     </button>
   );
 }
 
-export const MEdit = () => {
+export const MEdit = ({ type }: Approval) => {
   return (
     <MDXEditor
       markdown={fakePaper}
@@ -184,7 +197,8 @@ export const MEdit = () => {
         tablePlugin(),
         diffSourcePlugin({
           diffMarkdown: fakePaper2,
-          viewMode: "rich-text",
+          viewMode: type === "approve" ? "diff" : "rich-text",
+          readOnlyDiff: type === "approve",
         }),
 
         toolbarPlugin({
@@ -197,7 +211,7 @@ export const MEdit = () => {
                 <UndoRedo />
               </DiffSourceToggleWrapper>
 
-              <SaveButton />
+              <SaveButton type={type} />
             </>
           ),
         }),

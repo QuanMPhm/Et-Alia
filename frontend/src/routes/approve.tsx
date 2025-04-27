@@ -9,7 +9,7 @@ export const Route = createFileRoute("/approve")({
 function RouteComponent() {
   return (
     <div>
-      <MEdit />
+      <MEdit type="approve" />
       <Container>
         <p>Approve here</p>
       </Container>

@@ -6,5 +6,5 @@ export const Route = createFileRoute("/editor")({
 });
 
 function RouteComponent() {
-  return <MEdit />;
+  return <MEdit type="edit" />;
 }

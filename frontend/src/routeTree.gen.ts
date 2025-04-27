@@ -17,6 +17,7 @@ import { Route as FaqImport } from './routes/faq'
 import { Route as EditorImport } from './routes/editor'
 import { Route as ContactImport } from './routes/contact'
 import { Route as AuthButtonsImport } from './routes/auth-buttons'
+import { Route as ApprovedImport } from './routes/approved'
 import { Route as ApproveImport } from './routes/approve'
 import { Route as AboutImport } from './routes/about'
 import { Route as IndexImport } from './routes/index'
@@ -58,6 +59,12 @@ const ContactRoute = ContactImport.update({
 const AuthButtonsRoute = AuthButtonsImport.update({
   id: '/auth-buttons',
   path: '/auth-buttons',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const ApprovedRoute = ApprovedImport.update({
+  id: '/approved',
+  path: '/approved',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -114,6 +121,13 @@ declare module '@tanstack/react-router' {
       path: '/approve'
       fullPath: '/approve'
       preLoaderRoute: typeof ApproveImport
+      parentRoute: typeof rootRoute
+    }
+    '/approved': {
+      id: '/approved'
+      path: '/approved'
+      fullPath: '/approved'
+      preLoaderRoute: typeof ApprovedImport
       parentRoute: typeof rootRoute
     }
     '/auth-buttons': {
@@ -181,6 +195,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/approve': typeof ApproveRoute
+  '/approved': typeof ApprovedRoute
   '/auth-buttons': typeof AuthButtonsRoute
   '/contact': typeof ContactRoute
   '/editor': typeof EditorRoute
@@ -195,6 +210,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/approve': typeof ApproveRoute
+  '/approved': typeof ApprovedRoute
   '/auth-buttons': typeof AuthButtonsRoute
   '/contact': typeof ContactRoute
   '/editor': typeof EditorRoute
@@ -210,6 +226,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/approve': typeof ApproveRoute
+  '/approved': typeof ApprovedRoute
   '/auth-buttons': typeof AuthButtonsRoute
   '/contact': typeof ContactRoute
   '/editor': typeof EditorRoute
@@ -226,6 +243,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/approve'
+    | '/approved'
     | '/auth-buttons'
     | '/contact'
     | '/editor'
@@ -239,6 +257,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/approve'
+    | '/approved'
     | '/auth-buttons'
     | '/contact'
     | '/editor'
@@ -252,6 +271,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/approve'
+    | '/approved'
     | '/auth-buttons'
     | '/contact'
     | '/editor'
@@ -267,6 +287,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   ApproveRoute: typeof ApproveRoute
+  ApprovedRoute: typeof ApprovedRoute
   AuthButtonsRoute: typeof AuthButtonsRoute
   ContactRoute: typeof ContactRoute
   EditorRoute: typeof EditorRoute
@@ -281,6 +302,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   ApproveRoute: ApproveRoute,
+  ApprovedRoute: ApprovedRoute,
   AuthButtonsRoute: AuthButtonsRoute,
   ContactRoute: ContactRoute,
   EditorRoute: EditorRoute,
@@ -304,6 +326,7 @@ export const routeTree = rootRoute
         "/",
         "/about",
         "/approve",
+        "/approved",
         "/auth-buttons",
         "/contact",
         "/editor",
@@ -322,6 +345,9 @@ export const routeTree = rootRoute
     },
     "/approve": {
       "filePath": "approve.tsx"
+    },
+    "/approved": {
+      "filePath": "approved.tsx"
     },
     "/auth-buttons": {
       "filePath": "auth-buttons.tsx"
