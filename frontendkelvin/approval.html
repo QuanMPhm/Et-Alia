@@ -104,15 +104,18 @@ window.addEventListener('DOMContentLoaded', function() {
           const commitDiv = document.createElement('div');
           commitDiv.className = 'commitCard';
           commitDiv.innerHTML = `
-            <p><strong>Filename:</strong> ${commit.filename}</p>
-            <p><strong>Message:</strong> ${commit.message}</p>
-            <pre><strong>Content:</strong>\n${commit.content}</pre>
-            <div id="diff-${index}" style="margin-top:10px; color:gray;">Loading diff...</div>
-            <div class="buttonGroup">
-              <button class="approveButton" onclick="approveCommit(${index})">Approve</button>
-              <button class="rejectButton" onclick="rejectCommit(${index})">Reject</button>
-            </div>
-          `;
+    <p><strong>Filename:</strong> ${commit.filename}</p>
+    <p><strong>Message:</strong> ${commit.message}</p>
+    <pre><strong>Content:</strong>\n${commit.content}</pre>
+    <div style="margin-top:10px; background: #eee; padding:10px; border-radius:8px;">
+      <strong>Diff Summary:</strong><br>
+      <pre>${commit.diff_summary}</pre>
+    </div>
+    <div class="buttonGroup">
+      <button class="approveButton" onclick="approveCommit(${index})">Approve</button>
+      <button class="rejectButton" onclick="rejectCommit(${index})">Reject</button>
+    </div>
+  `;
           pendingCommitsDiv.appendChild(commitDiv);
 
           fetchAndDisplayDiff(commit.content, index); // Fetch live diff
