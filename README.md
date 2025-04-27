@@ -6,11 +6,13 @@
 
 ## Overview
 
-**Et Alia** is a decentralized, blockchain-powered version control system for markdown documents.  
-Built on **Polkadot's Westend Asset Hub** and leveraging **Hardhat** for local smart contract deployment,  
-it provides a trustless, tamper-resistant alternative to traditional version control.
+Our project, Et Alia, is developing a decentralized version control system to help authors, scholars, and non-coders make collaboration easier for writing and review.
 
-Designed with flexibility and transparency in mind, Et Alia allows users to **upload, review, approve, merge, and permanently record** document commits onto the blockchain — ensuring every change is **auditable, immutable, and verifiable**.
+Oftentimes, when collaborating with multiple writers on a project, let that be a book, research paper, or something similar, there is a clash of ideas on what should make the final cut. Whereas a word processor like Google Docs or Microsoft Word only contains one version of the final draft that is shared among collaborators, Et Alia gives them a new version control system to check and approve additions and changes effortlessly. It offers more control and structure in the writing review process because it’s decentralized to ensure your information cannot be tampered with by a centralized source. Authors can upload a markdown document, or start with a blank one, and then commit changes for collaborators to approve, and the cycle continues as co-authors write their own versions of the document or chapter. Et Alia is user-friendly for non-technical audiences, specifically in the writing, research, and academic fields.
+
+Decentralization is achieved by recording every file change on the blockchain. This is what distinguishes Et Alia from modern version control systems like Github. Whereas with Github, every commit is centrally stored on Github’s server, and Github itself is trusted as the source-of-truth for the user’s files through Trust-Of-First-Use. This means if Github is compromised, the user’s files can become compromised.
+In contrast, with Et Alia, since every commit is stored on the blockchain, users no longer have to rely on a single entity to keep an accurate record of their file commits. Every user can instead verify the authenticity and integrity of their files by fetching the commit history from an untamperable and trusted blockchain.
+
 
 ---
 
