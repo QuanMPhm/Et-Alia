@@ -19,7 +19,7 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ""),
         secure: false,
-        configure: (proxy, options) => {
+        configure: (proxy) => {
           // Ensure cookies and other headers are properly forwarded
           proxy.on("proxyReq", (proxyReq) => {
             proxyReq.setHeader("Origin", "http://localhost:5173");

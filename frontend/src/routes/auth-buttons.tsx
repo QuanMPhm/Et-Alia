@@ -34,7 +34,7 @@ export const Route = createFileRoute("/auth-buttons")({
 });
 
 function AuthButtonsComponent() {
-  const { data, isLoading, error } = useQuery<CheckSession>({
+  const { data, isLoading } = useQuery<CheckSession>({
     queryKey: ["session"],
     queryFn: checkSession,
   });

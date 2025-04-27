@@ -218,16 +218,16 @@ const logout = () => {
   });
 };
 
-const tryGetSession = () => {
-  try {
-    return document.cookie
-      .split(";")
-      .filter((s) => s.includes("session"))[0]
-      .split("=")[1];
-  } catch {
-    return undefined;
-  }
-};
+// const tryGetSession = () => {
+//   try {
+//     return document.cookie
+//       .split(";")
+//       .filter((s) => s.includes("session"))[0]
+//       .split("=")[1];
+//   } catch {
+//     return undefined;
+//   }
+// };
 
 function LogInSignUp() {
   const navigate = useNavigate();
