@@ -13,7 +13,7 @@ It uses a blockchain backend (Hardhat local node) to store commit metadata and a
 - **Backend**: 
   - Python (Flask)
 - **Blockchain**: 
-  - Hardhat (Ethereum local node)
+  - Westend Asset Hub Parachain
   - Solidity Smart Contract (CommitStorage)
 - **Database**:
   - SQLite (for user authentication)
