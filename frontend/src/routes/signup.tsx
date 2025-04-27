@@ -64,7 +64,7 @@ const LogInForm = () => {
         form.handleSubmit();
       }}
       className="flex flex-col gap-4 col-span-12 bg-emerald-100 px-6 py-12 rounded-3xl items-center justify-center h-min max-w-[500px] mx-auto w-full">
-      <h1 className="text-2xl">Log In</h1>
+      <h1 className="text-2xl">Sign Up</h1>
       <form.Field
         name="email"
         children={(field) => {
@@ -110,16 +110,19 @@ const LogInForm = () => {
         }}
       />
       <form.AppForm>
-        <form.SubmitButton label="Log In" />
+        <form.SubmitButton label="Sign Up" />
       </form.AppForm>
-      <Link to="/signup" className="underline">
-        Create an Account
-      </Link>
+      <span>
+        Already have an account?{" "}
+        <Link to="/login" className="underline">
+          Log In
+        </Link>
+      </span>
     </form>
   );
 };
 
-export const Route = createFileRoute("/login")({
+export const Route = createFileRoute("/signup")({
   component: RouteComponent,
 });
 

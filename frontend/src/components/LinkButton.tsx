@@ -13,7 +13,7 @@ const StyledLink = ({
 } & React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
   <a
     className={clsx(
-      "whitespace-nowrap cursor-pointer rounded-full text-center max-w-[330px] active:translate-y-[2px] transition-all",
+      "whitespace-nowrap cursor-pointer rounded-full text-center max-w-[330px] active:translate-y-[2px] transition-all font-normal",
       variant === "black"
         ? "bg-black !text-white hover:bg-gray-800 active:bg-emerald-800"
         : "bg-white !text-black hover:bg-gray-100 active:bg-emerald-100",
