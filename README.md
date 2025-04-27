@@ -1,63 +1,89 @@
-# Et Alia 
-Polkadot-backed Version Control System
+# Et Alia  
+A Decentralized GitHub Alternative, Powered by Polkadot and Hardhat
 
-## Overview
-This project is a simplified GitHub-style system for uploading, committing, and tracking markdown documents. 
-It uses a blockchain backend (Hardhat local node) to store commit metadata and allows different user roles 
-(uploader, approver) with authentication.
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![Made with Flask](https://img.shields.io/badge/Flask-Backend-blue)
+![Blockchain](https://img.shields.io/badge/Blockchain-Polkadot%20Westend%20Asset%20Hub-29ABE2)
 
-## Tech Stack
+---
 
-- **Frontend**: 
-  - Vanilla HTML, CSS, and JavaScript
-- **Backend**: 
+## 🌐 Overview
+
+**Et Alia** is a decentralized, blockchain-powered version control system for markdown documents.  
+Built on **Polkadot's Westend Asset Hub** and leveraging **Hardhat** for local smart contract deployment,  
+it provides a trustless, tamper-resistant alternative to traditional version control.
+
+Designed with flexibility and transparency in mind, Et Alia allows users to **upload, review, approve, merge, and permanently record** document commits onto the blockchain — ensuring every change is **auditable, immutable, and verifiable**.
+
+---
+
+## 🛠 Tech Stack
+
+- **Frontend**:
+  - Vanilla HTML, CSS, JavaScript, Tailwind
+- **Backend**:
   - Python (Flask)
-- **Blockchain**: 
-  - Westend Asset Hub Parachain
-  - Solidity Smart Contract (CommitStorage)
+- **Blockchain**:
+  - Solidity Smart Contract (CommitStorage.sol)
+  - Hardhat Development Environment
+  - Polkadot Westend Asset Hub (deployment target)
 - **Database**:
-  - SQLite (for user authentication)
+  - SQLite (user management)
 - **Authentication**:
+  - Secure login system with hashed passwords (`werkzeug.security`)
+  - Roles: Author / Editor
   - Simple Email, Password, and Role system with `Flask-SQLAlchemy`
-  - Passwords hashed using `werkzeug.security`
+  
 - **Version Control**:
-  - Git (for local markdown commits)
+  - Local Git integration (for tracking and committing file changes)
 
-## Key Features
+---
 
-- Upload and commit `.md` files
-- Auto-git commit for each upload
-- Store commit hashes and metadata (author, message, timestamp) on blockchain
-- Login and signup system with user roles (Uploader, Approver)
-- Approvers can view documents but not upload new ones
-- Hardhat node used for local Ethereum simulation
+## Core Features
 
-## Smart Contract
+- **Markdown Upload & Blockchain Commit**:
+  - Upload `.md` documents and trigger Git commits automatically.
+  - Commits are recorded both locally and immutably on the blockchain.
+- **Blockchain Commit Metadata Storage**:
+  - Commit hashes, authors, messages, and timestamps saved on-chain.
+- **User Role System**:
+  - **Authors** submit documents for review.
+  - **Editors** approve, merge, or reject submissions through a UI.
+- **Conflict Detection & Smart Merging**:
+  - Detects conflicts in simultaneous submissions.
+  - Offers editors "Keep Current", "Keep New", or "Smart Merge" options.
+- **Auditability**:
+  - Every commit is verifiable via the Westend blockchain explorer.
 
-Every time a commit is created, our backend will make a call to our [smart contract](./hardhat-blockchain/contracts/CommitStorage.sol) deployed on the Westend Asset Hub. Specifically, the backend calls [`alertNewCommit()`](./hardhat-blockchain/contracts/CommitStorage.sol#L7) with the commit's metadata, and the contract will emit an event contain this metadata. This allows the commit metadata to be stored on the blockchain, and therefore allows any user to verify the authenticity and accuracy of any file changes by fetching the commit metadata from the blockchain themselves.
+---
 
-You can find our contract on the Westend Asset Hut Block Explorer [here](https://blockscout-asset-hub.parity-chains-scw.parity.io/address/0x031a0698CCcB123504d0320b5edC01128529901A)
+## Smart Contract Integration
 
-## Screenshots of our UI
+Et Alia utilizes a Solidity-based smart contract called [CommitStorage](./hardhat-blockchain/contracts/CommitStorage.sol).
+
+On every successful document commit, the backend triggers a call to [`alertNewCommit()`](./hardhat-blockchain/contracts/CommitStorage.sol#L7), emitting an event with:
+
+- Git Commit Hash
+- Author Name
+- Commit Message
+- Timestamp
+
+This mechanism guarantees **traceable, decentralized proof** of each document update.
+
+**Deployed Smart Contract Explorer Link:**  
+[View Contract on Polkadot Westend Asset Hub](https://blockscout-asset-hub.parity-chains-scw.parity.io/address/0x031a0698CCcB123504d0320b5edC01128529901A)
+
+---
 
 ## Figma Mockups
 https://www.figma.com/design/HKqvOkKSrs8Fgd4tigzxXD/author-collab-project?node-id=0-1&t=TjTgae4VlDGyKlRZ-1
 
-## Demo Video
+## UI Screenshots
 
-- insert link here
+*(Screenshots coming soon — you can upload files into `/screenshots` and link them.)*
 
-## How to Run
 
-Set the environment variable `SERVER_PK` to the private key the server will use to sign blockchain transactions
 
-1. Clone the repo.
-2. Navigate to `webserver/` and install dependencies:
 
-```bash
-pip install -r requirements.txt
-
-To run the program, 'cd hardhat-blockchain' 'npm install'
-run webserver.py in webserver directory otherwise wont work
 
 
