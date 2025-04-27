@@ -274,38 +274,62 @@ def get_diff_summary():
 @app.route('/summary/<commit_hash>', methods=['GET'])
 def get_commit_summary(commit_hash):
     try:
+        # Get the diff with no color, no prefix (clean output)
         diff_output = run_git_command(["show", "--no-color", "--no-prefix", commit_hash])
 
         added_lines = []
         removed_lines = []
-        
-        for line in diff_output.splitlines():
-            if line.startswith('+') and not line.startswith('+++'):
-                added_lines.append(line[1:].strip())
-            elif line.startswith('-') and not line.startswith('---'):
-                removed_lines.append(line[1:].strip())
+        old_line_num = None
+        new_line_num = None
 
-        # Clean up: Remove exact matches (i.e., added and removed identical lines)
+        lines = diff_output.splitlines()
+
+        for line in lines:
+            if line.startswith('@@'):
+                # Diff hunk header, update line numbers
+                parts = line.split(' ')
+                old_line_info = parts[1]  # like "-5,7"
+                new_line_info = parts[2]  # like "+5,8"
+                old_line_num = int(old_line_info.split(',')[0][1:])
+                new_line_num = int(new_line_info.split(',')[0][1:])
+            elif line.startswith('-') and not line.startswith('---'):
+                removed_lines.append((old_line_num, line[1:].strip()))
+                old_line_num += 1
+            elif line.startswith('+') and not line.startswith('+++'):
+                added_lines.append((new_line_num, line[1:].strip()))
+                new_line_num += 1
+            elif not line.startswith('diff') and not line.startswith('index'):
+                # Normal unchanged line
+                if old_line_num is not None:
+                    old_line_num += 1
+                if new_line_num is not None:
+                    new_line_num += 1
+
+        # Clean up: Remove identical lines (same text, not based on line numbers)
         final_added = []
         final_removed = []
 
-        removed_copy = removed_lines.copy()  # Copy so we can modify it
+        removed_copy = removed_lines.copy()
 
-        for added in added_lines:
-            if added in removed_copy:
-                removed_copy.remove(added)  # Cancel it out if identical
-            else:
-                final_added.append(added)
+        for add_ln, add_text in added_lines:
+            matched = False
+            for idx, (rem_ln, rem_text) in enumerate(removed_copy):
+                if add_text == rem_text:
+                    removed_copy.pop(idx)  # cancel out identical
+                    matched = True
+                    break
+            if not matched:
+                final_added.append((add_ln, add_text))
 
-        for removed in removed_copy:
-            final_removed.append(removed)
+        for rem_ln, rem_text in removed_copy:
+            final_removed.append((rem_ln, rem_text))
 
         # Prepare summary text
         summary_parts = []
-        for r in final_removed:
-            summary_parts.append(f"Removed: {r}")
-        for a in final_added:
-            summary_parts.append(f"Added: {a}")
+        for line_num, r in final_removed:
+            summary_parts.append(f"Removed at line {line_num}: {r}")
+        for line_num, a in final_added:
+            summary_parts.append(f"Added at line {line_num}: {a}")
 
         if not summary_parts:
             summary = "No meaningful content changes detected."
