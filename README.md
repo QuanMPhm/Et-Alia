@@ -19,7 +19,7 @@ In contrast, with Et Alia, since every commit is stored on the blockchain, users
 ## Tech Stack
 
 - **Frontend**:
-  - Vanilla HTML, CSS, JavaScript, Tailwind
+  - JavaScript, Tailwind CSS, Vite, React, TanStack Query, TanStack Router, MDX-Editor, Figma, Adobe Suite
 - **Backend**:
   - Python (Flask)
 - **Blockchain**:
