@@ -156,36 +156,84 @@ def upload_markdown():
 def get_pending_commits():
     return jsonify(pending_commits)
 
+# Add helper functions first
+def detect_conflict(current_content, pending_content):
+    # Simple conflict detection: if they differ, and both non-empty
+    return current_content.strip() != pending_content.strip() and current_content.strip() and pending_content.strip()
+
+def merge_contents(current, pending):
+    # Simple naive merge: combine them both with clear separator
+    return f"{current.strip()}\n\n<!-- MERGED CONTENT -->\n\n{pending.strip()}"
+
+# Update your approve_commit route:
+
 @app.route('/approve_commit', methods=['POST'])
 def approve_commit():
     data = request.json
     index = data.get('index')
+    resolution = data.get('resolution')  # New field
 
     if index is None or index >= len(pending_commits):
         return jsonify({"error": "Invalid commit index"}), 400
 
-    commit = pending_commits.pop(index)
+    commit = pending_commits[index]  # Don't pop yet
+
     initialize_repo()
 
     filepath = os.path.join(FULL_REPO_PATH, commit["filename"])
+
+    if os.path.exists(filepath):
+        with open(filepath, 'r', encoding='utf-8') as f:
+            current_content = f.read()
+    else:
+        current_content = ""
+
+    pending_content = commit["content"]
+
+    if resolution is None:
+        if detect_conflict(current_content, pending_content):
+            return jsonify({
+                "conflict": True,
+                "current_content": current_content,
+                "pending_content": pending_content
+            }), 409
+        else:
+            resolution = 'merge'
+
+    if resolution == 'keep_a':
+        merged_content = current_content
+    elif resolution == 'keep_b':
+        merged_content = pending_content
+    elif resolution == 'merge':
+        merged_content = merge_contents(current_content, pending_content)
+    else:
+        return jsonify({"error": "Invalid resolution type."}), 400
+
     with open(filepath, 'w', encoding='utf-8') as f:
-        f.write(commit["content"])
+        f.write(merged_content)
 
-    run_git_command(["add", commit["filename"]])
-    run_git_command(["commit", "-m", commit["message"]])
+    try:
+        run_git_command(["add", commit["filename"]])
+        run_git_command(["commit", "-m", commit["message"]])
 
-    log_output = run_git_command(["log", "--pretty=format:%H%n%an%n%ad%n%s", "-n", "1"])
-    commit_hash, author_name, date_readable, commit_message_saved = log_output.split("\n", 3)
+        log_output = run_git_command(["log", "--pretty=format:%H%n%an%n%ad%n%s", "-n", "1"])
+        commit_hash, author_name, date_readable, commit_message_saved = log_output.split("\n", 3)
 
-    tx_hash = commit_storage.functions.saveCommit(
-        commit_hash,
-        author_name,
-        commit_message_saved,
-        date_readable
-    ).transact()
+        tx_hash = commit_storage.functions.saveCommit(
+            commit_hash,
+            author_name,
+            commit_message_saved,
+            date_readable
+        ).transact()
 
-    w3.eth.wait_for_transaction_receipt(tx_hash)
-    return jsonify({"message": "Commit approved and saved."}), 200
+        w3.eth.wait_for_transaction_receipt(tx_hash)
+
+        pending_commits.pop(index)
+
+        return jsonify({"message": "Commit approved and saved!"}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/reject_commit', methods=['POST'])
 def reject_commit():
