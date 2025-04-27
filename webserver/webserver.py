@@ -2,7 +2,7 @@ import os
 import subprocess
 import time
 import json
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, session
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -10,16 +10,18 @@ from web3 import Web3
 
 # --- Flask setup ---
 app = Flask(__name__)
+app.secret_key = os.urandom(24)  # Required for sessions
+app.config.update(SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Lax")
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 # --- Database setup ---
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///users.db"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
 # --- Paths ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-FRONTEND_DIR = os.path.abspath(os.path.join(BASE_DIR, '..', 'frontendkelvin'))
+FRONTEND_DIR = os.path.abspath(os.path.join(BASE_DIR, "..", "frontendkelvin"))
 REPO_DIR = os.path.join(BASE_DIR, "repos")
 REPO_NAME = "markdown_repo"
 FULL_REPO_PATH = os.path.join(REPO_DIR, REPO_NAME)
@@ -30,6 +32,7 @@ hh_node = None
 w3 = None
 commit_storage = None
 pending_commits = []
+
 
 # --- User Model ---
 class User(db.Model):
@@ -44,6 +47,7 @@ class User(db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+
 # --- Hardhat functions ---
 def start_hardhat_node():
     print("🚀 Starting Hardhat node...")
@@ -52,9 +56,10 @@ def start_hardhat_node():
         ["npx", "hardhat", "node"],
         cwd="../hardhat-blockchain",
         stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL
+        stderr=subprocess.DEVNULL,
     )
     time.sleep(5)
+
 
 def deploy_contract():
     print("🚀 Deploying smart contract...")
@@ -63,7 +68,7 @@ def deploy_contract():
         cwd="../hardhat-blockchain",
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        text=True
+        text=True,
     )
     if result.returncode != 0:
         print("❌ Deployment error:\n", result.stderr)
@@ -75,6 +80,7 @@ def deploy_contract():
             return line.split(":")[1].strip()
 
     raise Exception("Contract address not found.")
+
 
 def connect_web3(contract_address):
     global w3, commit_storage
@@ -88,6 +94,7 @@ def connect_web3(contract_address):
     commit_storage = w3.eth.contract(address=contract_address, abi=abi)
     w3.eth.default_account = w3.eth.accounts[0]
 
+
 def kill_node():
     if hh_node:
         print("🛑 Stopping Hardhat node...")
@@ -98,6 +105,7 @@ def kill_node():
         except subprocess.TimeoutExpired:
             hh_node.kill()
             print("⚠️ Hardhat node force killed.")
+
 
 # --- Git functions ---
 def run_git_command(args, cwd=FULL_REPO_PATH):
@@ -114,52 +122,73 @@ def run_git_command(args, cwd=FULL_REPO_PATH):
         raise Exception(f"Git failed: {result.stderr}")
     return result.stdout.strip()
 
+
 def initialize_repo():
     if not os.path.exists(FULL_REPO_PATH):
         print(f"📂 Creating repository at {FULL_REPO_PATH}")
         os.makedirs(FULL_REPO_PATH)
     if not os.path.exists(os.path.join(FULL_REPO_PATH, ".git")):
-        print(f"🛠️ Initializing Git repo...")
+        print("🛠️ Initializing Git repo...")
         run_git_command(["init"])
         run_git_command(["config", "user.email", "server@example.com"])
         run_git_command(["config", "user.name", "Server Bot"])
 
+
 # --- Flask Routes ---
 
-@app.route('/')
-def root():
-    return send_from_directory(FRONTEND_DIR, 'login.html')
 
-@app.route('/<path:path>')
+@app.before_request
+def check_authentication():
+    # List of endpoints that don't require authentication
+    public_endpoints = ["login", "signup", "root", "serve_static"]
+
+    if request.endpoint not in public_endpoints:
+        if "user_id" not in session:
+            return jsonify({"error": "Unauthorized - please login"}), 401
+
+
+@app.route("/logout", methods=["POST"])
+def logout():
+    session.clear()
+    return jsonify({"message": "Logged out successfully"}), 200
+
+
+@app.route("/")
+def root():
+    return send_from_directory(FRONTEND_DIR, "login.html")
+
+
+@app.route("/<path:path>")
 def serve_static(path):
     return send_from_directory(FRONTEND_DIR, path)
 
-@app.route('/upload', methods=['POST'])
+
+@app.route("/upload", methods=["POST"])
 def upload_markdown():
     print("🚀 Upload called.")
-    file = request.files.get('file')
+    file = request.files.get("file")
     if not file:
         return jsonify({"error": "No file uploaded"}), 400
 
-    content = file.read().decode('utf-8')
-    commit_message = request.form.get('message', f"Commit at {time.time()}")
+    content = file.read().decode("utf-8")
+    commit_message = request.form.get("message", f"Commit at {time.time()}")
 
-    pending_commits.append({
-        "filename": MARKDOWN_FILENAME,
-        "content": content,
-        "message": commit_message
-    })
+    pending_commits.append(
+        {"filename": MARKDOWN_FILENAME, "content": content, "message": commit_message}
+    )
 
     return jsonify({"message": "Submitted for approval."}), 200
 
-@app.route('/pending_commits', methods=['GET'])
+
+@app.route("/pending_commits", methods=["GET"])
 def get_pending_commits():
     return jsonify(pending_commits)
 
-@app.route('/approve_commit', methods=['POST'])
+
+@app.route("/approve_commit", methods=["POST"])
 def approve_commit():
     data = request.json
-    index = data.get('index')
+    index = data.get("index")
 
     if index is None or index >= len(pending_commits):
         return jsonify({"error": "Invalid commit index"}), 400
@@ -168,30 +197,30 @@ def approve_commit():
     initialize_repo()
 
     filepath = os.path.join(FULL_REPO_PATH, commit["filename"])
-    with open(filepath, 'w', encoding='utf-8') as f:
+    with open(filepath, "w", encoding="utf-8") as f:
         f.write(commit["content"])
 
     run_git_command(["add", commit["filename"]])
     run_git_command(["commit", "-m", commit["message"]])
 
     log_output = run_git_command(["log", "--pretty=format:%H%n%an%n%ad%n%s", "-n", "1"])
-    commit_hash, author_name, date_readable, commit_message_saved = log_output.split("\n", 3)
+    commit_hash, author_name, date_readable, commit_message_saved = log_output.split(
+        "\n", 3
+    )
 
     tx_hash = commit_storage.functions.saveCommit(
-        commit_hash,
-        author_name,
-        commit_message_saved,
-        date_readable
+        commit_hash, author_name, commit_message_saved, date_readable
     ).transact()
 
     w3.eth.wait_for_transaction_receipt(tx_hash)
     return jsonify({"message": "Commit approved and saved."}), 200
 
-@app.route('/reject_commit', methods=['POST'])
+
+@app.route("/reject_commit", methods=["POST"])
 def reject_commit():
     data = request.json
-    index = data.get('index')
-    reason = data.get('reason')
+    index = data.get("index")
+    reason = data.get("reason")
 
     if index is None or index >= len(pending_commits):
         return jsonify({"error": "Invalid commit index"}), 400
@@ -199,37 +228,44 @@ def reject_commit():
     pending_commits.pop(index)
     return jsonify({"message": f"Commit rejected: {reason}"}), 200
 
-@app.route('/current_markdown', methods=['GET'])
+
+@app.route("/current_markdown", methods=["GET"])
 def get_current_markdown():
     filepath = os.path.join(FULL_REPO_PATH, MARKDOWN_FILENAME)
     if os.path.exists(filepath):
-        with open(filepath, 'r', encoding='utf-8') as f:
+        with open(filepath, "r", encoding="utf-8") as f:
             content = f.read()
         return jsonify({"content": content})
     else:
         return jsonify({"content": "No file uploaded yet."})
 
-@app.route('/commits', methods=['GET'])
+
+@app.route("/commits", methods=["GET"])
 def get_commits():
     try:
         total = commit_storage.functions.getCommitsCount().call()
         commits = []
         for i in range(total):
             commit = commit_storage.functions.getCommit(i).call()
-            commits.append({
-                "commit_hash": commit[0],
-                "author_name": commit[1],
-                "commit_message": commit[2],
-                "date_iso": commit[3],
-            })
+            commits.append(
+                {
+                    "commit_hash": commit[0],
+                    "author_name": commit[1],
+                    "commit_message": commit[2],
+                    "date_iso": commit[3],
+                }
+            )
         return jsonify(commits), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/summary/<commit_hash>', methods=['GET'])
+
+@app.route("/summary/<commit_hash>", methods=["GET"])
 def get_commit_summary(commit_hash):
     try:
-        diff_output = run_git_command(["show", "--no-color", "--no-prefix", commit_hash])
+        diff_output = run_git_command(
+            ["show", "--no-color", "--no-prefix", commit_hash]
+        )
 
         added_lines = []
         removed_lines = []
@@ -239,19 +275,19 @@ def get_commit_summary(commit_hash):
         lines = diff_output.splitlines()
 
         for line in lines:
-            if line.startswith('@@'):
-                parts = line.split(' ')
+            if line.startswith("@@"):
+                parts = line.split(" ")
                 old_line_info = parts[1]
                 new_line_info = parts[2]
-                old_line_num = int(old_line_info.split(',')[0][1:])
-                new_line_num = int(new_line_info.split(',')[0][1:])
-            elif line.startswith('-') and not line.startswith('---'):
+                old_line_num = int(old_line_info.split(",")[0][1:])
+                new_line_num = int(new_line_info.split(",")[0][1:])
+            elif line.startswith("-") and not line.startswith("---"):
                 removed_lines.append((old_line_num, line[1:].strip()))
                 old_line_num += 1
-            elif line.startswith('+') and not line.startswith('+++'):
+            elif line.startswith("+") and not line.startswith("+++"):
                 added_lines.append((new_line_num, line[1:].strip()))
                 new_line_num += 1
-            elif not line.startswith('diff') and not line.startswith('index'):
+            elif not line.startswith("diff") and not line.startswith("index"):
                 if old_line_num is not None:
                     old_line_num += 1
                 if new_line_num is not None:
@@ -291,12 +327,13 @@ def get_commit_summary(commit_hash):
         print(f"Error generating summary: {e}")
         return jsonify({"summary": "Error generating summary."}), 500
 
-@app.route('/signup', methods=['POST'])
+
+@app.route("/signup", methods=["POST"])
 def signup():
     data = request.json
-    email = data['email']
-    password = data['password']
-    role = data['role']
+    email = data["email"]
+    password = data["password"]
+    role = data["role"]
 
     if User.query.filter_by(email=email).first():
         return jsonify({"error": "Email already exists"}), 400
@@ -308,33 +345,61 @@ def signup():
 
     return jsonify({"message": "Signup successful!"}), 201
 
-@app.route('/login', methods=['POST'])
+
+@app.route("/login", methods=["POST"])
 def login():
     data = request.json
-    email = data['email']
-    password = data['password']
+    email = data["email"]
+    password = data["password"]
 
     user = User.query.filter_by(email=email).first()
     if user and user.check_password(password):
-        redirect_url = 'editor.html' if user.role.lower() == 'author' else 'approval.html'
-        return jsonify({"message": "Login successful!", "role": user.role, "redirect_url": redirect_url}), 200
+        session.permanent = True
+        session["user_email"] = user.id
+        session["user_role"] = user.role
+
+        redirect_url = (
+            "editor.html" if user.role.lower() == "author" else "approval.html"
+        )
+        return jsonify(
+            {
+                "message": "Login successful!",
+                "role": user.role,
+                "redirect_url": redirect_url,
+            }
+        ), 200
     else:
         return jsonify({"error": "Invalid email or password"}), 401
 
-@app.route('/users', methods=['GET'])
+
+@app.route("/users", methods=["GET"])
 def get_users():
     users = User.query.all()
     return jsonify([{"email": user.email, "role": user.role} for user in users])
 
+
+@app.route("/check-session", methods=["GET"])
+def check_session():
+    if "user_email" in session:
+        return jsonify(
+            {
+                "is_authenticated": True,
+                "user_email": session["user_email"],
+                "user_role": session["user_role"],
+            }
+        ), 200
+    return jsonify({"is_authenticated": False}), 200
+
+
 # --- Start Everything ---
-if __name__ == '__main__':
+if __name__ == "__main__":
     with app.app_context():
         db.create_all()
 
     try:
         start_hardhat_node()
-        contract_address = deploy_contract()
-        connect_web3(contract_address)
+        # contract_address = deploy_contract()
+        # connect_web3(contract_address)
         print("🚀 Flask server ready at http://localhost:5000")
         app.run(debug=True)
     finally:
