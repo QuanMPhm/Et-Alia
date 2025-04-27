@@ -10,7 +10,7 @@ export const Container = ({
   return (
     <div
       className={[
-        "grid grid-cols-12 gap-4 h-full w-full",
+        "grid h-full w-full grid-cols-12 gap-4",
         noPadding ? "" : "p-6",
         className,
       ].join(" ")}>

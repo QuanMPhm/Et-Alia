@@ -10,36 +10,43 @@ export const Route = createFileRoute("/")({
 function Index() {
   return (
     <Container>
-      <ColorBlock className="col-span-12 bg-emerald-100 min-h-[50vh]">
-        <div className="flex col-span-12 flex-col gap-4 items-center justify-center">
-          <h2 className="text-5xl sm:text-6xl font-bold text-black p-4 sm:p-6">
+      <ColorBlock className="col-span-12 min-h-[50vh] bg-emerald-100">
+        <div className="col-span-12 flex flex-col items-center justify-center gap-4">
+          <h2 className="p-4 text-5xl font-bold text-black sm:p-6 sm:text-6xl">
             Get co-authoring!
           </h2>
 
-          <LinkButton to="/docs" variant="black">
+          <LinkButton to="/signup" variant="black">
             Create a New Document
           </LinkButton>
-          <LinkButton to="/docs" variant="white">
+          <LinkButton to="/login" variant="white">
             Upload a Markdown File
           </LinkButton>
         </div>
       </ColorBlock>
 
-      <div className="col-span-12 p-6 flex items-center justify-center">
-        <h3>Some stuff</h3>
+      <div className="col-span-12 flex min-h-[50vh] flex-col items-center justify-center gap-4 p-6 sm:flex-row">
+        <h3 className="text-5xl font-bold">Collaborate with Ease</h3>
+        <p className="prose text-lg">
+          Et Alia is an easy-to-use version control system for authors and
+          collaborators to write their best work. Bring together ideas and mark
+          up, add on, and revise documents effortlessly.
+        </p>
       </div>
 
-      <ColorBlock className="col-span-12 bg-emerald-100">
-        <div className="flex col-span-12 flex-col gap-4 items-center justify-center">
-          <h2 className="text-5xl sm:text-6xl font-bold text-black p-4 sm:p-6">
-            Get co-authoring!
+      <ColorBlock className="col-span-12 min-h-[50vh] bg-sky-200">
+        <div className="col-span-12 flex flex-col items-center justify-center gap-4">
+          <h2 className="p-4 text-5xl font-bold text-black sm:p-6 sm:text-6xl">
+            Who are we?
           </h2>
 
-          <LinkButton to="/docs" variant="black">
-            Create a New Document
-          </LinkButton>
-          <LinkButton to="/docs" variant="white">
-            Upload a Markdown File
+          <p className="prose text-lg">
+            In 2025, our founders created Et Alia with the vision to make
+            collaboration and co-authoring textbooks as simple as a software
+            engineer’s workflow in GitHub.
+          </p>
+          <LinkButton to="/about" variant="white">
+            About Us
           </LinkButton>
         </div>
       </ColorBlock>

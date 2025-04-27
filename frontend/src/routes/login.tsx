@@ -63,13 +63,13 @@ const LogInForm = () => {
         e.preventDefault();
         form.handleSubmit();
       }}
-      className="flex flex-col gap-4 col-span-12 bg-emerald-100 px-6 py-12 rounded-3xl items-center justify-center h-min max-w-[500px] mx-auto w-full">
+      className="col-span-12 mx-auto flex h-min w-full max-w-[500px] flex-col items-center justify-center gap-4 rounded-3xl bg-emerald-100 px-6 py-12">
       <h1 className="text-2xl">Log In</h1>
       <form.Field
         name="email"
         children={(field) => {
           return (
-            <div className="flex flex-col max-w-[300px]">
+            <div className="flex max-w-[300px] flex-col">
               <label htmlFor={field.name} className="w-full">
                 Email
               </label>
@@ -80,7 +80,7 @@ const LogInForm = () => {
                 onBlur={field.handleBlur}
                 onChange={(e) => field.handleChange(e.target.value)}
                 type="email"
-                className="bg-white w-[300px] text-lg h-10 px-2"
+                className="h-10 w-[300px] bg-white px-2 text-lg"
               />
               <FieldInfo field={field} />
             </div>
@@ -91,7 +91,7 @@ const LogInForm = () => {
         name="password"
         children={(field) => {
           return (
-            <div className="flex flex-col max-w-[300px]">
+            <div className="flex max-w-[300px] flex-col">
               <label htmlFor={field.name} className="w-full">
                 Password
               </label>
@@ -102,7 +102,7 @@ const LogInForm = () => {
                 onBlur={field.handleBlur}
                 onChange={(e) => field.handleChange(e.target.value)}
                 type="password"
-                className="bg-white w-[300px] text-lg h-10 px-2"
+                className="h-10 w-[300px] bg-white px-2 text-lg"
               />
               <FieldInfo field={field} />
             </div>
