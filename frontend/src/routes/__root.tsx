@@ -12,14 +12,14 @@ const LogInSignUp = () => {
         to="/login"
         size="normal"
         variant="white"
-        className="[&.active]:font-bold text-gray-500 hover:text-gray-700">
+        className="[&.active]:underline text-gray-500 hover:text-gray-700">
         Log In
       </LinkButton>
       <LinkButton
-        to="/contact"
+        to="/signup"
         size="normal"
         variant="black"
-        className="[&.active]:font-bold text-gray-500 hover:text-gray-700">
+        className="[&.active]:underline text-gray-500 hover:text-gray-700">
         Sign Up
       </LinkButton>
     </>
@@ -36,23 +36,23 @@ export const Route = createRootRoute({
           </div>
           <Link
             to="/"
-            className="[&.active]:font-bold col-span-12 sm:col-span-4 lg:col-span-3 flex items-end max-w-[250px]">
+            className="col-span-12 sm:col-span-4 lg:col-span-3 flex items-end max-w-[250px]">
             <LogoWithText />
           </Link>
           <div className="col-start-6 col-span-7 lg:col-start-5 lg:col-span-3 flex flex-row gap-6 items-end justify-end lg:justify-between">
             <Link
               to="/about"
-              className="text-gray-500 hover:text-gray-700 active:text-emerald-900 active:translate-y-[2px] transition-all">
+              className="[&.active]:underline text-gray-500 hover:text-gray-700 active:text-emerald-900 active:translate-y-[2px] transition-all">
               About
             </Link>
             <Link
               to="/faq"
-              className="text-gray-500 hover:text-gray-700 active:text-emerald-900 active:translate-y-[2px] transition-all">
+              className="[&.active]:underline text-gray-500 hover:text-gray-700 active:text-emerald-900 active:translate-y-[2px] transition-all">
               FAQ
             </Link>
             <Link
               to="/contact"
-              className="text-gray-500 hover:text-gray-700 active:text-emerald-900 active:translate-y-[2px] transition-all">
+              className="[&.active]:underline text-gray-500 hover:text-gray-700 active:text-emerald-900 active:translate-y-[2px] transition-all">
               Contact
             </Link>
           </div>

@@ -11,6 +11,7 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as SignupImport } from './routes/signup'
 import { Route as LoginImport } from './routes/login'
 import { Route as FaqImport } from './routes/faq'
 import { Route as ContactImport } from './routes/contact'
@@ -20,6 +21,12 @@ import { Route as DocsIndexImport } from './routes/docs/index'
 import { Route as DocsDocIdImport } from './routes/docs/$docId'
 
 // Create/Update Routes
+
+const SignupRoute = SignupImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const LoginRoute = LoginImport.update({
   id: '/login',
@@ -102,6 +109,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginImport
       parentRoute: typeof rootRoute
     }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupImport
+      parentRoute: typeof rootRoute
+    }
     '/docs/$docId': {
       id: '/docs/$docId'
       path: '/docs/$docId'
@@ -127,6 +141,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
   '/docs/$docId': typeof DocsDocIdRoute
   '/docs': typeof DocsIndexRoute
 }
@@ -137,6 +152,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
   '/docs/$docId': typeof DocsDocIdRoute
   '/docs': typeof DocsIndexRoute
 }
@@ -148,6 +164,7 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
   '/docs/$docId': typeof DocsDocIdRoute
   '/docs/': typeof DocsIndexRoute
 }
@@ -160,10 +177,19 @@ export interface FileRouteTypes {
     | '/contact'
     | '/faq'
     | '/login'
+    | '/signup'
     | '/docs/$docId'
     | '/docs'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/contact' | '/faq' | '/login' | '/docs/$docId' | '/docs'
+  to:
+    | '/'
+    | '/about'
+    | '/contact'
+    | '/faq'
+    | '/login'
+    | '/signup'
+    | '/docs/$docId'
+    | '/docs'
   id:
     | '__root__'
     | '/'
@@ -171,6 +197,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/faq'
     | '/login'
+    | '/signup'
     | '/docs/$docId'
     | '/docs/'
   fileRoutesById: FileRoutesById
@@ -182,6 +209,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   FaqRoute: typeof FaqRoute
   LoginRoute: typeof LoginRoute
+  SignupRoute: typeof SignupRoute
   DocsDocIdRoute: typeof DocsDocIdRoute
   DocsIndexRoute: typeof DocsIndexRoute
 }
@@ -192,6 +220,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   FaqRoute: FaqRoute,
   LoginRoute: LoginRoute,
+  SignupRoute: SignupRoute,
   DocsDocIdRoute: DocsDocIdRoute,
   DocsIndexRoute: DocsIndexRoute,
 }
@@ -211,6 +240,7 @@ export const routeTree = rootRoute
         "/contact",
         "/faq",
         "/login",
+        "/signup",
         "/docs/$docId",
         "/docs/"
       ]
@@ -229,6 +259,9 @@ export const routeTree = rootRoute
     },
     "/login": {
       "filePath": "login.tsx"
+    },
+    "/signup": {
+      "filePath": "signup.tsx"
     },
     "/docs/$docId": {
       "filePath": "docs/$docId.tsx"
