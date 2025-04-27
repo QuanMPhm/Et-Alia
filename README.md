@@ -51,6 +51,8 @@ It uses a blockchain backend (Hardhat local node) to store commit metadata and a
 
 ## How to Run
 
+Set the environment variable `SERVER_PK` to the private key the server will use to sign blockchain transactions
+
 1. Clone the repo.
 2. Navigate to `webserver/` and install dependencies:
 
