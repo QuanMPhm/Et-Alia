@@ -80,9 +80,13 @@ https://www.figma.com/design/HKqvOkKSrs8Fgd4tigzxXD/author-collab-project?node-i
 ## UI Screenshots
 
 <img width="1399" alt="Screenshot 2025-04-27 at 11 10 55 AM" src="https://github.com/user-attachments/assets/ddc517e2-c36f-4800-97cd-7f74f9b7b8ce" />
+
 ![image](https://github.com/user-attachments/assets/aa79adcb-7dca-4820-a562-749b829dfc07)
+
 ![image](https://github.com/user-attachments/assets/186f5392-ed69-49fa-bfa1-fc6546932102)
+
 ![image](https://github.com/user-attachments/assets/edc2e69f-170e-4a39-aff3-28d479232522)
+
 ![image](https://github.com/user-attachments/assets/089bee68-0fe8-49af-9780-46d85cf20f6f)
 
 
