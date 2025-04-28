@@ -1,4 +1,4 @@
-![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)
 ![Made with Flask](https://img.shields.io/badge/Flask-Backend-blue)
 ![Blockchain](https://img.shields.io/badge/Blockchain-Polkadot%20Westend%20Asset%20Hub-29ABE2)
 
